@@ -1,103 +1,155 @@
-import Image from "next/image";
+// c:\\Users\\elwynn\\Documents\\Void0\\dj_contacts_web\\dj_research\\src\\app\\page.tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+
+// Functions for SoundCloud PKCE Auth (kept as they are used by initiateAuth)
+function generateCodeVerifier(length: number = 128): string {
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+    for (let i = 0; i < length; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+}
+
+async function generateCodeChallenge(codeVerifier: string): Promise<string> {
+    const digest = await sha256(codeVerifier);
+    const buffer = new Uint8Array(digest);
+    const challenge = btoa(String.fromCharCode(...new Uint8Array(buffer)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    return challenge;
+}
+
+async function sha256(plain: string) {
+    const utf8 = new TextEncoder().encode(plain);
+    const digest = await window.crypto.subtle.digest('SHA-256', utf8);
+    return digest;
+}
+// End SoundCloud PKCE Auth functions
+
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false); // State to control UI elements based on auth status
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    useEffect(() => {
+        // Function to check authentication status using the server-side endpoint
+        const checkAuthStatus = async () => {
+            try {
+                const response = await fetch('/api/auth/status');
+                if (response.ok) {
+                    const data = await response.json();
+                    setIsAuthenticated(data.authenticated);
+                } else {
+                    setIsAuthenticated(false);
+                }
+            } catch (error) {
+                console.error('Error checking auth status:', error);
+                setIsAuthenticated(false);
+            }
+        };
+
+        // Check auth status on component mount
+        checkAuthStatus();
+
+        // Periodically trigger the server-side refresh token endpoint
+        // The server will handle the actual token expiry check and refresh logic
+        const accessTokenRefreshInterval = 59 * 60 * 1000; // Check every 10 seconds for testing
+
+        const intervalId = setInterval(() => {
+             console.log('Client-side triggering server-side token refresh attempt...');
+             // Call the status endpoint, which will internally trigger refresh if needed
+             checkAuthStatus();
+         }, accessTokenRefreshInterval);
+
+
+        return () => clearInterval(intervalId); // Cleanup interval on component unmount
+    }, []); // Empty dependency array to run once on mount
+
+    const initiateAuth = async () => {
+        const codeVerifier = generateCodeVerifier();
+        const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+        const clientId = process.env.NEXT_PUBLIC_SOUNDCLOUD_CLIENT_ID;
+        const redirectUri = process.env.NEXT_PUBLIC_SOUNDCLOUD_REDIRECT_URI;
+        const state = generateCodeVerifier(32);
+
+        document.cookie = `code_verifier=${codeVerifier}; path=/; max-age=3600`;
+
+        const authorizationEndpoint = `https://secure.soundcloud.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri ?? '')}&response_type=code&code_challenge=${codeChallenge}&code_challenge_method=S256&state=${state}`;
+
+        window.location.href = authorizationEndpoint;
+    };
+
+    // TODO: Implement terminateAuth function for disconnecting
+
+    return (
+        <div className="container mx-auto p-4">
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', marginBottom: '20px' }}>
+                {isAuthenticated ? (
+                    <img
+                        src="https://connect.soundcloud.com/2/btn-disconnect-l.png"
+                        // TODO : onClick={terminateAuth} to disconnect from SoundCloud
+                        style={{ cursor: 'not-allowed' }}
+                        alt="Disconnect from SoundCloud"
+                    ></img>
+                ) : (
+                    <img
+                        src="https://connect.soundcloud.com/2/btn-connect-sc-l.png"
+                        onClick={initiateAuth}
+                        style={{ cursor: 'pointer' }} 
+                        alt="Connect to SoundCloud"
+                    ></img>
+                )}
+            </div>
+
+            <h1 className="text-2xl font-bold mb-4">DJ Contact Scraper</h1>
+
+            {/* Placeholder for genre input form */}
+            <div className="mb-4">
+                <label htmlFor="genre-input" className="block text-gray-700 text-sm font-bold mb-2">
+                    Enter Genre:
+                </label>
+                <input
+                    type="text"
+                    id="genre-input"
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    placeholder="e.g., Bassline, UK Garage"
+                />
+                <button className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Search
+                </button>
+            </div>
+
+            {/* Placeholder for results table */}
+            <div>
+                <h2 className="text-xl font-semibold mb-2">Search Results</h2>
+                <table className="table-auto w-full">
+                    <thead>
+                        <tr>
+                            <th className="px-4 py-2">DJ Name</th>
+                            <th className="px-4 py-2">Website</th>
+                            <th className="px-4 py-2">Instagram</th>
+                            <th className="px-4 py-2">Promo/Demo Email</th>
+                            <th className="px-4 py-2">SoundCloud</th>
+                            <th className="px-4 py-2">tstack.app</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {/* Table rows will be populated with search results */}
+                        <tr>
+                            <td className="border px-4 py-2"></td>
+                            <td className="border px-4 py-2"></td>
+                            <td className="border px-4 py-2"></td>
+                            <td className="border px-4 py-2"></td>
+                            <td className="border px-4 py-2"></td>
+                            <td className="border px-4 py-2"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+    );
 }
