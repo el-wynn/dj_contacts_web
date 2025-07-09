@@ -90,6 +90,21 @@ export default function Home() {
         window.location.href = authorizationEndpoint;
     };
 
+    const terminateAuth = async () => {
+        try {
+            const response = await fetch('/api/auth/disconnect');
+            if (response.ok) {
+                console.log('Successfully disconnected from SoundCloud.');
+                // Refresh the page or update the isAuthenticated state (client side) to reflect disconnection.
+                setIsAuthenticated(false);
+            } else {
+                console.error('Failed to disconnect from SoundCloud:', response.status, response.statusText);
+            }
+        } catch (error) {
+            console.error('Error calling disconnect endpoint:', error);
+        }
+    };
+
     const handleSearch = async () => {
         const artistList = searchQuery.split(',').map(artist => artist.trim());
         let allResults: any[] = [];
@@ -116,7 +131,7 @@ export default function Home() {
                 {isAuthenticated ? (
                     <img
                         src="https://connect.soundcloud.com/2/btn-disconnect-l.png"
-                        //onClick={terminateAuth}
+                        onClick={terminateAuth}
                         style={{ cursor: 'pointer' }}
                         alt="Disconnect from SoundCloud"
                     ></img>
