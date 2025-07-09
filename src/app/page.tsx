@@ -33,6 +33,8 @@ async function sha256(plain: string) {
 
 export default function Home() {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false); // State to control UI elements based on auth status
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<any[]>([]); // Replace 'any' with a proper type
 
     useEffect(() => {
         // Function to check authentication status using the server-side endpoint
@@ -79,7 +81,7 @@ export default function Home() {
         const cookieOptions = process.env.NODE_ENV === 'production' ? 
             `; path=/; secure; sameSite=strict; max-age=3600` : 
             `; path=/; max-age=3600`;
-        
+
         document.cookie = `code_verifier=${codeVerifier}${cookieOptions}`;
         document.cookie = `oauth_state=${state}${cookieOptions}`;
 
@@ -88,7 +90,25 @@ export default function Home() {
         window.location.href = authorizationEndpoint;
     };
 
-    // TODO: Implement terminateAuth function for disconnecting
+    const handleSearch = async () => {
+        const artistList = searchQuery.split(',').map(artist => artist.trim());
+        let allResults: any[] = [];
+
+        for (const artist of artistList) {
+            try {
+                const response = await fetch(`/api/soundcloud/search?query=${artist}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    allResults = allResults.concat(data.results);
+                } else {
+                    console.error(`SoundCloud search API error for ${artist}:`, response.status, response.statusText);
+                }
+            } catch (error) {
+                console.error(`Error calling SoundCloud search API for ${artist}:`, error);
+            }
+        }
+        setSearchResults(allResults);
+    };
 
     return (
         <div className="container mx-auto p-4">
@@ -96,8 +116,8 @@ export default function Home() {
                 {isAuthenticated ? (
                     <img
                         src="https://connect.soundcloud.com/2/btn-disconnect-l.png"
-                        // TODO : onClick={terminateAuth} to disconnect from SoundCloud
-                        style={{ cursor: 'not-allowed' }}
+                        //onClick={terminateAuth}
+                        style={{ cursor: 'pointer' }}
                         alt="Disconnect from SoundCloud"
                     ></img>
                 ) : (
@@ -112,23 +132,27 @@ export default function Home() {
 
             <h1 className="text-2xl font-bold mb-4">DJ Contact Scraper</h1>
 
-            {/* Placeholder for genre input form */}
+            {/* Artist input form */}
             <div className="mb-4">
-                <label htmlFor="genre-input" className="block text-gray-700 text-sm font-bold mb-2">
-                    Enter Genre:
+                <label htmlFor="artist-input" className="block text-gray-700 text-sm font-bold mb-2">
+                    Enter Artists (comma-separated):
                 </label>
                 <input
                     type="text"
-                    id="genre-input"
+                    id="artist-input"
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    placeholder="e.g., Bassline, UK Garage"
+                    placeholder="e.g., Disclosure, Gorgon City, MK, JBoi"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <button className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                <button className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  onClick={handleSearch}
+                >
                     Search
                 </button>
             </div>
 
-            {/* Placeholder for results table */}
+            {/* Results table */}
             <div>
                 <h2 className="text-xl font-semibold mb-2">Search Results</h2>
                 <table className="table-auto w-full">
@@ -143,15 +167,34 @@ export default function Home() {
                         </tr>
                     </thead>
                     <tbody>
-                        {/* Table rows will be populated with search results */}
-                        <tr>
-                            <td className="border px-4 py-2"></td>
-                            <td className="border px-4 py-2"></td>
-                            <td className="border px-4 py-2"></td>
-                            <td className="border px-4 py-2"></td>
-                            <td className="border px-4 py-2"></td>
-                            <td className="border px-4 py-2"></td>
-                        </tr>
+                        {searchResults.map((result: any, index: number) => (
+                            <tr key={index}>
+                                <td className="border px-4 py-2">{result.djName}</td>
+                                <td className="border px-4 py-2">
+                                    {result.website ? (
+                                        <a href={result.website} target="_blank" rel="noopener noreferrer" className="text-blue-500">
+                                            Website
+                                        </a>
+                                    ) : null}
+                                </td>
+                                <td className="border px-4 py-2">
+                                    {result.instagram ? (
+                                        <a href={result.instagram} target="_blank" rel="noopener noreferrer" className="text-blue-500">
+                                            {result.instagram}
+                                        </a>
+                                    ) : null}
+                                </td>
+                                <td className="border px-4 py-2">{result.demoEmail}</td>
+                                <td className="border px-4 py-2">
+                                    {result.soundCloud ? (
+                                        <a href={result.soundCloud} target="_blank" rel="noopener noreferrer" className="text-blue-500">
+                                            {result.soundCloud}
+                                        </a>
+                                    ) : null}
+                                </td>
+                                <td className="border px-4 py-2">{result.tstack}</td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>
