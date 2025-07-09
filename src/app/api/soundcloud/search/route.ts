@@ -1,4 +1,3 @@
-// c:\\Users\\elwynn\\Documents\\Void0\\dj_contacts_web\\dj_research\\src\\app\\api\\soundcloud\\search\\route.ts
 import { NextResponse, NextRequest } from 'next/server';
 
 // Helper function to extract emails from text

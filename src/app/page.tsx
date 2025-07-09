@@ -1,7 +1,6 @@
-// c:\\Users\\elwynn\\Documents\\Void0\\dj_contacts_web\\dj_research\\src\\app\\page.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 
 // Functions for SoundCloud PKCE Auth (kept as they are used by initiateAuth)
 function generateCodeVerifier(length: number = 128): string {
@@ -48,7 +47,7 @@ export default function Home() {
                     setIsAuthenticated(false);
                 }
             } catch (error) {
-                console.error('Error checking auth status:', error);
+                console.error('Error checking auth status');
                 setIsAuthenticated(false);
             }
         };
@@ -98,28 +97,44 @@ export default function Home() {
                 // Refresh the page or update the isAuthenticated state (client side) to reflect disconnection.
                 setIsAuthenticated(false);
             } else {
-                console.error('Failed to disconnect from SoundCloud:', response.status, response.statusText);
+                console.error('Failed to disconnect from SoundCloud');
             }
         } catch (error) {
-            console.error('Error calling disconnect endpoint:', error);
+            console.error('Error calling disconnect endpoint');
         }
     };
 
-    const handleSearch = async () => {
-        const artistList = searchQuery.split(',').map(artist => artist.trim());
-        let allResults: any[] = [];
+    const sanitizeArtistInput = (input: string): string => {
+        return input
+            .replace(/[^a-zA-Z0-9\s,\-_]/g, '')
+            .substring(0, 100);
+    };
 
-        for (const artist of artistList) {
+    const handleSearch = async () => {
+        const sanitizedQuery = sanitizeArtistInput(searchQuery);
+        const artistList = sanitizedQuery.split(',')
+            .map(artist => artist.trim().toLowerCase())
+            .filter(artist => artist.length > 0);
+
+        if (artistList.length === 0) {
+            alert('Please enter valid artist names');
+            return;
+        }
+
+        let allResults: any[] = [];
+        const uniqueArtists = [...new Set(artistList)];
+
+        for (const artist of uniqueArtists) {
             try {
-                const response = await fetch(`/api/soundcloud/search?query=${artist}`);
+                const response = await fetch(`/api/soundcloud/search?query=${encodeURIComponent(artist)}`);
                 if (response.ok) {
                     const data = await response.json();
                     allResults = allResults.concat(data.results);
                 } else {
-                    console.error(`SoundCloud search API error for ${artist}:`, response.status, response.statusText);
+                    console.error(`SoundCloud search API error for ${artist}:`);
                 }
             } catch (error) {
-                console.error(`Error calling SoundCloud search API for ${artist}:`, error);
+                console.error(`Error calling SoundCloud search API for ${artist}:`);
             }
         }
         setSearchResults(allResults);
@@ -145,7 +160,7 @@ export default function Home() {
                 )}
             </div>
 
-            <h1 className="text-2xl font-bold mb-4">DJ Contact Scraper</h1>
+            <h1 className="text-2xl font-bold mb-4">DJ Contact Researcher</h1>
 
             {/* Artist input form */}
             <div className="mb-4">
@@ -158,7 +173,12 @@ export default function Home() {
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                     placeholder="e.g., Disclosure, Gorgon City, MK, JBoi"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                        const cleanValue = e.target.value
+                            .replace(/[^a-zA-Z0-9\s,\-_]/g, '');
+                        setSearchQuery(cleanValue);
+                    }}
+                    maxLength={500}
                 />
                 <button className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                   onClick={handleSearch}
@@ -184,30 +204,51 @@ export default function Home() {
                     <tbody>
                         {searchResults.map((result: any, index: number) => (
                             <tr key={index}>
-                                <td className="border px-4 py-2">{result.djName}</td>
+                                <td className="border px-4 py-2">
+                                    {DOMPurify.sanitize(result.djName || '')}
+                                </td>
                                 <td className="border px-4 py-2">
                                     {result.website ? (
-                                        <a href={result.website} target="_blank" rel="noopener noreferrer" className="text-blue-500">
+                                        <a 
+                                            href={DOMPurify.sanitize(result.website)} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="text-blue-500"
+                                        >
                                             Website
                                         </a>
                                     ) : null}
                                 </td>
                                 <td className="border px-4 py-2">
                                     {result.instagram ? (
-                                        <a href={result.instagram} target="_blank" rel="noopener noreferrer" className="text-blue-500">
-                                            {result.instagram}
+                                        <a 
+                                            href={DOMPurify.sanitize(result.instagram)} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="text-blue-500"
+                                        >
+                                            {DOMPurify.sanitize(result.instagram)}
                                         </a>
                                     ) : null}
                                 </td>
-                                <td className="border px-4 py-2">{result.demoEmail}</td>
+                                <td className="border px-4 py-2">
+                                    {DOMPurify.sanitize(result.demoEmail || '')}
+                                </td>
                                 <td className="border px-4 py-2">
                                     {result.soundCloud ? (
-                                        <a href={result.soundCloud} target="_blank" rel="noopener noreferrer" className="text-blue-500">
-                                            {result.soundCloud}
+                                        <a 
+                                            href={DOMPurify.sanitize(result.soundCloud)} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="text-blue-500"
+                                        >
+                                            {DOMPurify.sanitize(result.soundCloud)}
                                         </a>
                                     ) : null}
                                 </td>
-                                <td className="border px-4 py-2">{result.tstack}</td>
+                                <td className="border px-4 py-2">
+                                    {DOMPurify.sanitize(result.tstack || '')}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
