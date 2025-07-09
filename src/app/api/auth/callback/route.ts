@@ -1,8 +1,16 @@
 import { NextResponse, NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
+  const state = searchParams.get('state');
+  const expectedState = request.cookies.get('oauth_state')?.value;
+
+  // Verify state parameter matches expected value
+  if (!state || !expectedState || state !== expectedState) {
+    console.error('Invalid state parameter');
+    return NextResponse.json({ error: 'Authentication failed' }, { status: 400 });
+  }
 
   if (!code) {
     console.error('Missing authorization code.');
@@ -36,25 +44,23 @@ export async function GET(request: NextRequest) {
     const tokenData = await tokenResponse.json();
     const { access_token, refresh_token } = tokenData;
 
-    const redirectURL = new URL('/', request.url);
-    redirectURL.searchParams.set('access_token', access_token);
-    redirectURL.searchParams.set('refresh_token', refresh_token);
-
-    const response = NextResponse.redirect(redirectURL);
+    const response = NextResponse.redirect(new URL('/', request.url));
     response.cookies.delete('code_verifier');
 
     try {
       response.cookies.set('accessToken', access_token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,
+        sameSite: 'lax',
         path: '/',
         maxAge: 3600, // Token expires in 1 hour
       });
       response.cookies.set('refreshToken', refresh_token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,
+        sameSite: 'lax',
         path: '/',
-        maxAge: 3600, // Token expires in 1 hour
+        maxAge: 24 * 30 * 3600, // Token expires in 30 days
       });
     } catch (error) {
       console.error("Error setting cookies from callback");
@@ -62,8 +68,16 @@ export async function GET(request: NextRequest) {
 
     return response;
 
-  } catch (error) {
-    console.error('Error exchanging authorization code for access token:', error);
-    return NextResponse.json({ error: 'Failed to exchange authorization code' }, { status: 500 });
-  }
+    } catch (error) {
+      console.error('Error during authentication:', error);
+      return NextResponse.json(
+        { error: 'Authentication failed' }, 
+        { 
+          status: 500,
+          headers: {
+            'Clear-Site-Data': '"cookies"'
+          }
+        }
+      );
+    }
 }

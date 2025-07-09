@@ -56,10 +56,9 @@ export default function Home() {
 
         // Periodically trigger the server-side refresh token endpoint
         // The server will handle the actual token expiry check and refresh logic
-        const accessTokenRefreshInterval = 59 * 60 * 1000; // Check every 10 seconds for testing
+        const accessTokenRefreshInterval = 360000; // Check every hour for testing
 
         const intervalId = setInterval(() => {
-             console.log('Client-side triggering server-side token refresh attempt...');
              // Call the status endpoint, which will internally trigger refresh if needed
              checkAuthStatus();
          }, accessTokenRefreshInterval);
@@ -76,7 +75,13 @@ export default function Home() {
         const redirectUri = process.env.NEXT_PUBLIC_SOUNDCLOUD_REDIRECT_URI;
         const state = generateCodeVerifier(32);
 
-        document.cookie = `code_verifier=${codeVerifier}; path=/; max-age=3600`;
+        // Set secure cookies for PKCE and state parameters
+        const cookieOptions = process.env.NODE_ENV === 'production' ? 
+            `; path=/; secure; sameSite=strict; max-age=3600` : 
+            `; path=/; max-age=3600`;
+        
+        document.cookie = `code_verifier=${codeVerifier}${cookieOptions}`;
+        document.cookie = `oauth_state=${state}${cookieOptions}`;
 
         const authorizationEndpoint = `https://secure.soundcloud.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri ?? '')}&response_type=code&code_challenge=${codeChallenge}&code_challenge_method=S256&state=${state}`;
 

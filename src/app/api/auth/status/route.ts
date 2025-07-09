@@ -68,7 +68,8 @@ export async function GET(request: NextRequest) {
                      console.log('New refresh token received. Updating refresh token cookie.');
                      response.cookies.set('refreshToken', newRefreshToken, {
                          httpOnly: true,
-                         secure: process.env.NODE_ENV === 'production',
+                         secure: true,
+                         sameSite: 'lax',
                          path: '/',
                           // Set appropriate maxAge for refresh token (or leave as session)
                           // maxAge: 3600 * 24 * 30, // Example: 30 days
