@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { rateLimiter } from '@/lib/rateLimit';
 import { scrapeEmails } from '@/lib/scraper';
 import { extractEmails } from '@/lib/scraper';
+import { ContactInfo } from '@/lib/types';
 import * as cheerio from 'cheerio';
 
 // Simple in-memory cache with 5 minute TTL
@@ -32,7 +33,7 @@ function extractTstackLinks(text: string): string[] {
 }
 
 // Helper function to scrape a website and extract contact information
-async function scrapeWebsite(url: string): Promise<{ website?: string, instagram?: string, demoEmail?: string, tstack?: string }> {
+async function scrapeWebsite(url: string): Promise<ContactInfo> {
     try {
         const response = await fetch(url, {
             headers: {
@@ -196,7 +197,15 @@ export async function GET(request: NextRequest) {
             description: userDescription,
         };
 
-        return NextResponse.json({ results: [result] });
+        // 4. API Response Consolidation
+        const buildApiResponse = (results: ContactInfo[]) => ({
+            success: true,
+            data: results,
+            timestamp: new Date().toISOString()
+        });
+
+        // Usage in GET: 
+        return NextResponse.json(buildApiResponse([result]));
 
     } catch (error) {
         console.error('Error in SoundCloud search API route:', error);

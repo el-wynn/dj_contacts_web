@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { ContactInfo } from '@/lib/types';
 import DOMPurify from 'dompurify';
 
 // Functions for SoundCloud PKCE Auth (kept as they are used by initiateAuth)
