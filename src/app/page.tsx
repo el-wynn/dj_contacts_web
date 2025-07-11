@@ -127,9 +127,11 @@ export default function Home() {
         for (const artist of uniqueArtists) {
             try {
                 const response = await fetch(`/api/soundcloud/search?query=${encodeURIComponent(artist)}`);
-                if (response.ok) {
+                if (response.ok && response.status == 200) {
                     const data = await response.json();
                     allResults = allResults.concat(data.results);
+                } else if (response.status == 429) {
+                    alert("Too many requests. Please wait for a minute or retry tomorrow.");
                 } else {
                     console.error(`SoundCloud search API error for ${artist}:`);
                 }

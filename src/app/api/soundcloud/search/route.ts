@@ -1,4 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
+import { rateLimiter } from '@/lib/rateLimit';
 
 // Helper function to extract emails from text
 function extractEmails(text: string): string[] {
@@ -16,6 +17,12 @@ function extractTstackLinks(text: string): string[] {
 
 export async function GET(request: NextRequest) {
     try {
+        // Apply rate limiting
+        const rateLimitResponse = await rateLimiter(request, 'soundcloud-search');
+        if (rateLimitResponse) {
+            return rateLimitResponse;
+        }
+
         const accessToken = request.cookies.get('accessToken')?.value;
 
         if (!accessToken) {
