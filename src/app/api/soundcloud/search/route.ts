@@ -1,18 +1,100 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { rateLimiter } from '@/lib/rateLimit';
+import { scrapeEmails } from '@/lib/scraper';
+import { extractEmails } from '@/lib/scraper';
+import * as cheerio from 'cheerio';
 
-// Helper function to extract emails from text
-function extractEmails(text: string): string[] {
-    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-    const emails = (text.match(emailRegex) || [])
-                     .filter(email => !/agency|management|entertainment|talent|mgmt|booking|press/i.test(email));
-    return emails;
+// Simple in-memory cache with 5 minute TTL
+const scrapeCache = new Map<string, {data: any, timestamp: number}>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+function getCachedResult(url: string) {
+    const cached = scrapeCache.get(url);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+        console.log(`Using cached data for ${url}`);
+        return cached.data;
+    }
+    return null;
+}
+
+function setCachedResult(url: string, data: any) {
+    scrapeCache.set(url, {
+        data,
+        timestamp: Date.now()
+    });
+    console.log(`Cached data for ${url}`);
 }
 
 // Helper function to extract tstack.app links from text
 function extractTstackLinks(text: string): string[] {
-    const tstackRegex = /https:\/\/tstack\.app\/[a-zA-Z0-9_]+/g;
+    const tstackRegex = /https:\/\/(www\.)?tstack\.app\/[a-zA-Z0-9_]+/g;
     return text.match(tstackRegex) || [];
+}
+
+// Helper function to scrape a website and extract contact information
+async function scrapeWebsite(url: string): Promise<{ website?: string, instagram?: string, demoEmail?: string, tstack?: string }> {
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (compatible; ContactFinder/1.0)'
+            }
+        })
+
+        if (!response.ok) {
+            console.error(`Failed to fetch website: ${url} - Status: ${response.status} ${response.statusText}`);
+            return {};
+        }
+
+        const html = await response.text();
+        const $ = cheerio.load(html);
+
+        let website = '';
+        let instagram = '';
+        let demoEmail = '';
+        let tstack = '';
+
+        // Extract Instagram link from meta tags (more reliable)
+        $('meta[property="og:url"]').each((i, elem) => {
+            const content = $(elem).attr('content');
+            if (content && content.includes('instagram.com')) {
+                instagram = content;
+                return false; // Stop after first match
+            }
+        });
+
+        // Extract all links and search for contact info
+        const links: string[] = [];
+        $('a').each((i, elem) => {
+            const href = $(elem).attr('href');
+            if (href) {
+                links.push(href);
+            }
+        });
+
+        const emails: string[] = [];
+        for (const link of links) {
+            if (link.includes("instagram.com") && !instagram) instagram = link;
+            if (link.includes("tstack.app") && !tstack) tstack = link;
+        }
+
+        //Extract email addresses
+        const extractedEmails = await scrapeEmails(url);
+        demoEmail = extractedEmails.join('; ');
+
+        const result = { website, instagram, demoEmail, tstack };
+        
+        // Update cache
+        scrapeCache.set(url, {
+            data: result,
+            timestamp: Date.now()
+        });
+        console.log(`Cached data for ${url}`);
+        return result;
+
+    } catch (error) {
+        console.error(`Error scraping website ${url}:`, error);
+        return {};
+    }
 }
 
 export async function GET(request: NextRequest) {
@@ -91,18 +173,26 @@ export async function GET(request: NextRequest) {
         const website = firstUser.website || '';
         const instagramUsername = webProfiles.find(profile => profile?.url && profile?.service?.includes('instagram'))?.username || '';
         const instagram = instagramUsername ? `https://instagram.com/${instagramUsername}` : '';
-        const tstack = extractTstackLinks(userDescription).join('; ');
+        const tstack = extractTstackLinks(userDescription);
         const demoEmail = extractEmails(userDescription).join('; ');
         const soundcloudLink = firstUser.permalink_url || '';
 
-        // 5. Construct the result object
+        // 5. Scrape the website if available and missing info
+        let scrapedData: { website?: string; instagram?: string; demoEmail?: string; tstack?: string } = {};
+        if (website && (!instagram || !demoEmail || !tstack)) {
+            console.log(`Checking website for additional info: ${website}`);
+            // Try cache first
+            scrapedData = getCachedResult(website) || await scrapeWebsite(website);
+        }
+
+        // 6. Construct the result object, prioritize SoundCloud API data
         const result = {
             djName: firstUser.username,
-            website: website,
-            instagram: instagram,
-            demoEmail: demoEmail,
+            website: website || scrapedData.website || '', // Prefer API website
+            instagram: instagram || scrapedData.instagram || '', // Prefer API instagram
+            demoEmail: [demoEmail, scrapedData.demoEmail].filter(Boolean).join('; '), // Add either or concat both
             soundCloud: soundcloudLink,
-            tstack: tstack,
+            tstack: tstack || scrapedData.tstack || '', // Prefer API tstack
             description: userDescription,
         };
 
