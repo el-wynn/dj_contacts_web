@@ -1,7 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { ContactInfo } from '@/lib/types';
+import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
+import { all } from 'axios';
 
 // Functions for SoundCloud PKCE Auth (kept as they are used by initiateAuth)
 function generateCodeVerifier(length: number = 128): string {
@@ -33,8 +35,13 @@ async function sha256(plain: string) {
 
 export default function Home() {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false); // State to control UI elements based on auth status
+    const [isSearching, setIsSearching] = useState<boolean>(false); // State to control UI elements while searching
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]); // Replace 'any' with a proper type
+    const [csvFile, setCsvFile] = useState<File | null>(null);
+    const [csvError, setCsvError] = useState<string | null>(null);
+    const [notFoundArtists, setNotFoundArtists] = useState<string[]>([]);
+    
 
     useEffect(() => {
         // Function to check authentication status using the server-side endpoint
@@ -68,6 +75,13 @@ export default function Home() {
 
         return () => clearInterval(intervalId); // Cleanup interval on component unmount
     }, []); // Empty dependency array to run once on mount
+
+    useEffect(() => {
+        document.body.style.cursor = isSearching ? 'wait' : 'default';
+        return () => {
+            document.body.style.cursor = 'default'; // Clean up on unmount
+        };
+    }, [isSearching]);
 
     const initiateAuth = async () => {
         const codeVerifier = generateCodeVerifier();
@@ -105,6 +119,39 @@ export default function Home() {
         }
     };
 
+    const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file && file.type === 'text/csv') {
+            setCsvFile(file);
+            setCsvError(null);
+        } else {
+            setCsvFile(null);
+            setCsvError('Invalid file type. Please select a CSV file.');
+        }
+    };
+    
+    const parseImportedCSV = async () => {
+        if (!csvFile) {
+            setCsvError('Please select a CSV file.');
+            return;
+        }
+    
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const csvText = event.target?.result as string;
+            // TODO: Implement CSV parsing and validation logic here
+            // For example, using a library like "papaparse"
+            // After parsing, update the "searchResults" state
+
+            console.log('CSV Content:', csvText);
+            alert('Parsing logic to be implemented. Check console for CSV content.');
+        };
+        reader.onerror = () => {
+            setCsvError('Error reading CSV file.');
+        };
+        reader.readAsText(csvFile);
+    };
+
     const sanitizeArtistInput = (input: string): string => {
         return input
             .replace(/[^a-zA-Z0-9\s,\-_]/g, '')
@@ -122,25 +169,87 @@ export default function Home() {
             return;
         }
 
+        setIsSearching(true);
+
         let allResults: any[] = [];
         const uniqueArtists = [...new Set(artistList)];
+        const notFound: string[] = [];
 
         for (const artist of uniqueArtists) {
             try {
                 const response = await fetch(`/api/soundcloud/search?query=${encodeURIComponent(artist)}`);
-                if (response.ok && response.status == 200) {
-                    const data = await response.json();
-                    allResults = allResults.concat(data.results);
+                const { success, data } = await response.json()
+                if (success && data && data.length > 0) {                    
+                    allResults = allResults.concat(data);
                 } else if (response.status == 429) {
                     alert("Too many requests. Please wait for a minute or retry tomorrow.");
+                    console.error("Too many requests")
+                    break;
                 } else {
-                    console.error(`SoundCloud search API error for ${artist}:`);
+                    console.log(`Artist not found: ${artist}`);
+                    notFound.push(artist);
                 }
             } catch (error) {
-                console.error(`Error calling SoundCloud search API for ${artist}:`);
+                console.error(`Error calling SoundCloud search API for ${artist}`);
             }
         }
+        setNotFoundArtists(notFound);
         setSearchResults(allResults);
+        setIsSearching(false);
+    };
+
+    // Sanitize API output using DOMPurify
+    const sanitize = (dirty: string): string => {
+        try {
+            return DOMPurify.sanitize(dirty || '');
+        } catch(error) {
+            console.error(error);
+            return "";
+        }
+    }
+
+    const generateCSV = (data: ContactInfo[]): string => {
+        // Define the headers explicitly to ensure correct order and inclusion
+        const headers = ['DJ Name', 'Instagram', 'Promo/Demo Email', 'SoundCloud', 'TrackStack', 'Evaluation','Comments'];
+    
+        // Map the data to an array of objects with keys matching the desired CSV headers
+        // Ensure all required fields are present, even if empty, for Papa.unparse
+        const csvData = data.map(item => ({
+            'DJ Name' : item.djName || '',
+            'Instagram' : item.instagram || '',
+            'Promo/Demo Email' : item.demoEmail || '',
+            'SoundCloud' : item.soundCloud || '',
+            'TrackStack' : item.tstack || '',
+        }));
+    
+        // Use Papa.unparse to generate the CSV string
+        const csvString = Papa.unparse(csvData, {
+            columns: headers, // Specify columns to ensure order
+            header: true,     // Include the header row
+            quotes: true,      // Always quote fields
+            delimiter: ',',   // Ensure comma delimiter
+        });
+        console.log("Generating CSV");
+    
+        return csvString;
+    };
+
+    const downloadCSV = (csv: string) => {
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); // Added charset
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'dj_contacts.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        console.log("Downloading CSV");
+    };
+
+    const handleExportCSV = () => {
+        const csvData = generateCSV(searchResults);
+        downloadCSV(csvData);
     };
 
     return (
@@ -164,6 +273,27 @@ export default function Home() {
             </div>
 
             <h1 className="text-2xl font-bold mb-4">DJ Contact Researcher</h1>
+           
+            {/* CSV import form */}
+            <div className="mb-4">
+                <label htmlFor="csv-input" className="block text-gray-700 text-sm font-bold mb-2">
+                    Import Contacts from CSV:
+                </label>
+                <input
+                    type="file"
+                    id="csv-input"
+                    accept=".csv"
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    onChange={handleImportCSV}
+                />
+                <button className="mt-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    onClick={parseImportedCSV}
+                    disabled={!csvFile}
+                >
+                    Import
+                </button>
+                {csvError && <p className="text-red-500 text-xs italic">{csvError}</p>}
+            </div>
 
             {/* Artist input form */}
             <div className="mb-4">
@@ -206,57 +336,101 @@ export default function Home() {
                     </thead>
                     <tbody>
                         {searchResults.map((result: any, index: number) => (
-                            <tr key={index}>
-                                <td className="border px-4 py-2">
-                                    {DOMPurify.sanitize(result.djName || '')}
-                                </td>
-                                <td className="border px-4 py-2">
-                                    {result.website ? (
-                                        <a 
-                                            href={DOMPurify.sanitize(result.website)} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer" 
-                                            className="text-blue-500"
-                                        >
-                                            Website
-                                        </a>
-                                    ) : null}
-                                </td>
-                                <td className="border px-4 py-2">
-                                    {result.instagram ? (
-                                        <a 
-                                            href={DOMPurify.sanitize(result.instagram)} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer" 
-                                            className="text-blue-500"
-                                        >
-                                            {DOMPurify.sanitize(result.instagram)}
-                                        </a>
-                                    ) : null}
-                                </td>
-                                <td className="border px-4 py-2">
-                                    {DOMPurify.sanitize(result.demoEmail || '')}
-                                </td>
-                                <td className="border px-4 py-2">
-                                    {result.soundCloud ? (
-                                        <a 
-                                            href={DOMPurify.sanitize(result.soundCloud)} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer" 
-                                            className="text-blue-500"
-                                        >
-                                            {DOMPurify.sanitize(result.soundCloud)}
-                                        </a>
-                                    ) : null}
-                                </td>
-                                <td className="border px-4 py-2">
-                                    {DOMPurify.sanitize(result.tstack || '')}
-                                </td>
-                            </tr>
+                            result ? (
+                                <tr key={index}>
+                                    <td className="border px-4 py-2 font-semibold">
+                                        {sanitize(result.djName)}
+                                    </td>
+                                    <td className="border px-4 py-2">
+                                        {result.website ? (
+                                            <a 
+                                                href={sanitize(result.website)} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer" 
+                                                className="text-blue-500"
+                                            >
+                                                Website
+                                            </a>
+                                        ) : null}
+                                    </td>
+                                    <td className="border px-4 py-2">
+                                        {result.instagram ? (
+                                            <a 
+                                                href={DOMPurify.sanitize(result.instagram)} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer" 
+                                                className="text-blue-500"
+                                            >
+                                                {sanitize(result.instagram)}
+                                            </a>
+                                        ) : null}
+                                    </td>
+                                    <td className="border px-4 py-2">
+                                        {sanitize(result.demoEmail)}
+                                    </td>
+                                    <td className="border px-4 py-2">
+                                        {result.soundCloud ? (
+                                            <a 
+                                                href={sanitize(result.soundCloud)} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer" 
+                                                className="text-blue-500"
+                                            >
+                                                {sanitize(result.soundCloud)}
+                                            </a>
+                                        ) : null}
+                                    </td>
+                                    <td className="border px-4 py-2">
+                                        {sanitize(result.tstack)}
+                                    </td>
+                                </tr>
+                            ) : (
+                                <tr key={`empty-${index}`}>
+                                    <td colSpan={6} className="border px-4 py-2 text-center text-gray-500">
+                                        Invalid result data
+                                    </td>
+                                </tr>
+                            )
                         ))}
                     </tbody>
                 </table>
+                <button
+                    className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    onClick={handleExportCSV}
+                >
+                    Export CSV
+                </button>
             </div>
+            {/* Not Found Artists */}
+            {notFoundArtists.length > 0 && (
+                <div className="mt-4">
+                    <h3 className="text-lg font-semibold text-orange-600">Artists Not Found:</h3>
+                    <ul className="list-disc list-inside text--600">
+                        {notFoundArtists.map((artist, index) => (
+                            <li key={index}>{artist}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+            {/* Searching Overlay */}
+            {isSearching && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    color: 'white',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 1000,
+                    cursor: 'wait', // Change cursor to wait
+                }}>
+                    <p>Searching...</p>
+                </div>
+            )}
         </div>
     );
 }

@@ -13,8 +13,10 @@
     "cheerio": "^1.1.0",
     "dompurify": "^3.2.6",
     "next": "15.3.5",
+    "papaparse": "^5.5.3",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-papaparse": "^4.4.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

@@ -10,22 +10,19 @@ export function extractEmails(text: string): string[] {
     const matches = text.match(emailRegex);
     let emails: string[] = matches ? [...matches] : [];
 
-    /*// Blacklist certain file extensions to filter out false positives
-    const blacklistedExtensions = [
-        '.jpg', '.jpeg', '.png', '.svg', '.gif',
-        '.tga', '.bmp', '.zip', '.pdf', '.webp',
-    ];
+    if (!emails.length) return [];
 
-    emails = emails.filter((email: string) => {
-        // Convert email and extensions to lowercase for case-insensitive comparison
-        const lowerEmail = email.toLowerCase();
-        return !blacklistedExtensions.some(ext => lowerEmail.endsWith(ext));
-    }); */
+    emails.map(email => email.toLowerCase());
+
+    // Blacklist certain file extensions to filter out false positives
+    const blacklistedExtensions = ['.jpg', '.jpeg', '.png', '.svg', '.gif','.tga', '.bmp', '.zip', '.pdf', '.webp'];
+    emails = emails.filter((email: string) => !blacklistedExtensions.some(ext => email.endsWith(ext)));
 
     // Remove agency and management email addresses
-    const blacklisedDomains = /agency|management|entertainment|talent|mgmt|booking|press|domain\.com/i;
-    emails = emails.filter((email: string) => !blacklisedDomains.test(email));
+    const blacklistedDomains = /agency|management|entertainment|talent|mgmt|booking|press|domain\.com/i;
+    emails = emails.filter((email: string) => !blacklistedDomains.test(email));
 
+    // Lowercase
     return emails;
 }
 
@@ -126,6 +123,7 @@ export async function scrapeEmails(startUrl: string): Promise<string[]> {
     return Array.from(emailsFound) as string[];
 }
 
+/* // Exemple of use 
 async function main(websiteUrls: string[]): Promise<void> {
     const results: Record<string, string[]> = {};
     const concurrencyLimit = 5;
@@ -140,23 +138,4 @@ async function main(websiteUrls: string[]): Promise<void> {
     }
 
     console.log(results);
-}
-
-// Example usage
-const testWebsiteUrls = [
-    /* 'http://ballardproperty.com.au/home',
-    'https://www.cohenfarquharson.com.au/',
-    'https://www.metrocommercial.com.au/',
-    'https://nuaskinbliss.com/',
-    'https://ahoyclub.com/',
-    'https://www.cyclehire.com.au/',
-    'https://www.moveyourself.com.au/index.php?page=depot&code=RANDC',
-    'http://www.mccyclery.com.au/',
-    'http://www.oneroundentertainment.com.au/',
-    'http://sydneyresurfacingservices.com.au/', */
-    'http://andersensicecream.com/australia/',
-    'http://www.thecoogeeview.com.au/',
-    //'https://www.instagram.com/coogeesurfandco'
-];
-
-main(testWebsiteUrls);
+} */
