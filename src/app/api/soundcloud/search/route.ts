@@ -27,9 +27,10 @@ function setCachedResult(url: string, data: any) {
 }
 
 // Helper function to extract tstack.app links from text
-function extractTstackLinks(text: string): string[] {
+function extractTstackLinks(text: string): string {
     const tstackRegex = /https:\/\/(www\.)?tstack\.app\/[a-zA-Z0-9_]+/g;
-    return text.match(tstackRegex) || [];
+    const match = text.match(tstackRegex);
+    return match ? match[0] : '';
 }
 
 // Helper function to scrape a website and extract contact information
@@ -85,13 +86,9 @@ async function scrapeWebsite(url: string): Promise<ContactInfo> {
         const result = { website, instagram, demoEmail, tstack };
         
         // Update cache
-        scrapeCache.set(url, {
-            data: result,
-            timestamp: Date.now()
-        });
-        console.log(`Cached data for ${url}`);
-        return result;
+        setCachedResult(url, result);
 
+        return result;
     } catch (error) {
         console.error(`Error scraping website ${url}:`, error);
         return {};
@@ -134,11 +131,14 @@ export async function GET(request: NextRequest) {
 
         if (!userSearchResponse.ok) {
             console.error('SoundCloud user search API request failed:', userSearchResponse.status, userSearchResponse.statusText);
-            return NextResponse.json({ error: 'SoundCloud user search API request failed', details: { status: userSearchResponse.status, text: await userSearchResponse.text() } }, { status: userSearchResponse.status });
+            return NextResponse.json({
+                error: 'SoundCloud user search API request failed',
+                details: { status: userSearchResponse.status, text: await userSearchResponse.text() } 
+            }, { status: userSearchResponse.status });
         }
 
         const userData = await userSearchResponse.json();
-        console.log('SoundCloud user search response data:', userData);
+        //console.log('SoundCloud user search response data:', userData);
 
         if (!userData || userData.length === 0) {
             console.log('No SoundCloud users found for query:', searchQuery);
@@ -166,7 +166,7 @@ export async function GET(request: NextRequest) {
                 console.error('SoundCloud web profiles API request failed:', webProfilesResponse.status, webProfilesResponse.statusText);
             } else {
                 webProfiles = await webProfilesResponse.json();
-                console.log('SoundCloud web profiles data:', webProfiles);
+                //console.log('SoundCloud web profiles data:', webProfiles);
             }
         }
 
@@ -181,9 +181,12 @@ export async function GET(request: NextRequest) {
         // 5. Scrape the website if available and missing info
         let scrapedData: { website?: string; instagram?: string; demoEmail?: string; tstack?: string } = {};
         if (website && (!instagram || !demoEmail || !tstack)) {
-            console.log(`Checking website for additional info: ${website}`);
-            // Try cache first
-            scrapedData = getCachedResult(website) || await scrapeWebsite(website);
+            if (scrapedData = getCachedResult(website))
+                console.log(`Using cached data for website: ${website}`);
+            else {
+                console.log(`Checking website for additional info: ${website}`);
+                scrapedData = await scrapeWebsite(website) ;
+            }
         }
 
         // 6. Construct the result object, prioritize SoundCloud API data
@@ -194,21 +197,20 @@ export async function GET(request: NextRequest) {
             demoEmail: [demoEmail, scrapedData.demoEmail].filter(Boolean).join('; '), // Add either or concat both
             soundCloud: soundcloudLink,
             tstack: tstack || scrapedData.tstack || '', // Prefer API tstack
-            description: userDescription,
         };
 
-        // 4. API Response Consolidation
+       // 4. API Response Consolidation
         const buildApiResponse = (results: ContactInfo[]) => ({
             success: true,
             data: results,
             timestamp: new Date().toISOString()
         });
-
-        // Usage in GET: 
         return NextResponse.json(buildApiResponse([result]));
-
-    } catch (error) {
-        console.error('Error in SoundCloud search API route:', error);
-        return NextResponse.json({ error: 'Failed to search SoundCloud', details: String(error) }, { status: 500 });
+    } catch (exception) {
+        console.error('Error in SoundCloud search API route:', exception);
+        return NextResponse.json({ 
+            error: 'Failed to search SoundCloud', 
+            details: String(exception) 
+        }, { status: 500 });
     }
 }

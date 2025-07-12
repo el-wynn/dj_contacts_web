@@ -197,11 +197,11 @@ export default function Home() {
                     <thead>
                         <tr>
                             <th className="px-4 py-2">DJ Name</th>
-                            <th className="px-4 py-2">Website</th>
+                            <th className="px-4 py-2">Website (not exported)</th>
                             <th className="px-4 py-2">Instagram</th>
                             <th className="px-4 py-2">Promo/Demo Email</th>
                             <th className="px-4 py-2">SoundCloud</th>
-                            <th className="px-4 py-2">tstack.app</th>
+                            <th className="px-4 py-2">TrackStack</th>
                         </tr>
                     </thead>
                     <tbody>

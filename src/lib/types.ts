@@ -4,6 +4,6 @@ export interface ContactInfo {
     instagram?: string;
     demoEmail?: string;
     soundCloud?: string;
-    tstack?: string | string[];
+    tstack?: string;
     description?: string;
 }
