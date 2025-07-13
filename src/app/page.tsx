@@ -36,6 +36,7 @@ async function sha256(plain: string) {
 export default function Home() {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false); // State to control UI elements based on auth status
     const [isSearching, setIsSearching] = useState<boolean>(false); // State to control UI elements while searching
+    const [hasSearched, setHasSerached] = useState<boolean>(false); // State to display table when search is done
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]); // Replace 'any' with a proper type
     const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -196,6 +197,7 @@ export default function Home() {
         setNotFoundArtists(notFound);
         setSearchResults(allResults);
         setIsSearching(false);
+        setHasSerached(true);
     };
 
     // Sanitize API output using DOMPurify
@@ -321,86 +323,88 @@ export default function Home() {
             </div>
 
             {/* Results table */}
-            <div>
-                <h2 className="text-xl font-semibold mb-2">Search Results</h2>
-                <table className="table-auto w-full">
-                    <thead>
-                        <tr>
-                            <th className="px-4 py-2">DJ Name</th>
-                            <th className="px-4 py-2">Website (not exported)</th>
-                            <th className="px-4 py-2">Instagram</th>
-                            <th className="px-4 py-2">Promo/Demo Email</th>
-                            <th className="px-4 py-2">SoundCloud</th>
-                            <th className="px-4 py-2">TrackStack</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {searchResults.map((result: any, index: number) => (
-                            result ? (
-                                <tr key={index}>
-                                    <td className="border px-4 py-2 font-semibold">
-                                        {sanitize(result.djName)}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {result.website ? (
-                                            <a 
-                                                href={sanitize(result.website)} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer" 
-                                                className="text-blue-500"
-                                            >
-                                                Website
-                                            </a>
-                                        ) : null}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {result.instagram ? (
-                                            <a 
-                                                href={DOMPurify.sanitize(result.instagram)} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer" 
-                                                className="text-blue-500"
-                                            >
-                                                {sanitize(result.instagram)}
-                                            </a>
-                                        ) : null}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {sanitize(result.demoEmail)}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {result.soundCloud ? (
-                                            <a 
-                                                href={sanitize(result.soundCloud)} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer" 
-                                                className="text-blue-500"
-                                            >
-                                                {sanitize(result.soundCloud)}
-                                            </a>
-                                        ) : null}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                        {sanitize(result.tstack)}
-                                    </td>
-                                </tr>
-                            ) : (
-                                <tr key={`empty-${index}`}>
-                                    <td colSpan={6} className="border px-4 py-2 text-center text-gray-500">
-                                        Invalid result data
-                                    </td>
-                                </tr>
-                            )
-                        ))}
-                    </tbody>
-                </table>
-                <button
-                    className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    onClick={handleExportCSV}
-                >
-                    Export CSV
-                </button>
-            </div>
+            {hasSearched && (
+                <div>
+                    <h2 className="text-xl font-semibold mb-2">Search Results</h2>
+                    <table className="table-auto w-full">
+                        <thead>
+                            <tr>
+                                <th className="px-4 py-2">DJ Name</th>
+                                <th className="px-4 py-2">Website (not exported)</th>
+                                <th className="px-4 py-2">Instagram</th>
+                                <th className="px-4 py-2">Promo/Demo Email</th>
+                                <th className="px-4 py-2">SoundCloud</th>
+                                <th className="px-4 py-2">TrackStack</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {searchResults.map((result: any, index: number) => (
+                                result ? (
+                                    <tr key={index}>
+                                        <td className="border px-4 py-2 font-semibold">
+                                            {sanitize(result.djName)}
+                                        </td>
+                                        <td className="border px-4 py-2">
+                                            {result.website ? (
+                                                <a 
+                                                    href={sanitize(result.website)} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer" 
+                                                    className="text-blue-500"
+                                                >
+                                                    Website
+                                                </a>
+                                            ) : null}
+                                        </td>
+                                        <td className="border px-4 py-2">
+                                            {result.instagram ? (
+                                                <a 
+                                                    href={DOMPurify.sanitize(result.instagram)} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer" 
+                                                    className="text-blue-500"
+                                                >
+                                                    {sanitize(result.instagram)}
+                                                </a>
+                                            ) : null}
+                                        </td>
+                                        <td className="border px-4 py-2">
+                                            {sanitize(result.demoEmail)}
+                                        </td>
+                                        <td className="border px-4 py-2">
+                                            {result.soundCloud ? (
+                                                <a 
+                                                    href={sanitize(result.soundCloud)} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer" 
+                                                    className="text-blue-500"
+                                                >
+                                                    {sanitize(result.soundCloud)}
+                                                </a>
+                                            ) : null}
+                                        </td>
+                                        <td className="border px-4 py-2">
+                                            {sanitize(result.tstack)}
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    <tr key={`empty-${index}`}>
+                                        <td colSpan={6} className="border px-4 py-2 text-center text-gray-500">
+                                            Invalid result data
+                                        </td>
+                                    </tr>
+                                )
+                            ))}
+                        </tbody>
+                    </table>
+                    <button
+                        className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        onClick={handleExportCSV}
+                    >
+                        Export CSV
+                    </button>
+                </div>
+            )}
             {/* Not Found Artists */}
             {notFoundArtists.length > 0 && (
                 <div className="mt-4">

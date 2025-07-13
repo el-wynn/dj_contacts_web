@@ -19,7 +19,7 @@ export function extractEmails(text: string): string[] {
     emails = emails.filter((email: string) => !blacklistedExtensions.some(ext => email.endsWith(ext)));
 
     // Remove agency and management email addresses
-    const blacklistedDomains = /agency|management|entertainment|talent|mgmt|booking|press|domain\.com/i;
+    const blacklistedDomains = /agency|management|entertainment|talent|mgmt|booking|press|domain\.com|example/i;
     emails = emails.filter((email: string) => !blacklistedDomains.test(email));
 
     // Lowercase
