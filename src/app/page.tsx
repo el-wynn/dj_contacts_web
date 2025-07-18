@@ -156,7 +156,7 @@ export default function Home() {
     const sanitizeArtistInput = (input: string): string => {
         return input
             .replace(/[^a-zA-Z0-9\s,\-_]/g, '')
-            .substring(0, 100);
+            //.substring(0, 100);
     };
 
     const handleSearch = async () => {

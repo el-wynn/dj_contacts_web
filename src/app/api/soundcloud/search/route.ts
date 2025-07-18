@@ -39,7 +39,8 @@ async function scrapeWebsite(url: string): Promise<ContactInfo> {
         const response = await fetch(url, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (compatible; ContactFinder/1.0)'
-            }
+            },
+            signal: AbortSignal.timeout(10000)
         })
 
         if (!response.ok) {
@@ -170,8 +171,10 @@ export async function GET(request: NextRequest) {
             }
         }
 
+        const blacklistedWebsite = /tiktok|spotify|music\.apple\.com/i;
+
         // 4. Extract contact information
-        const website = firstUser.website || '';
+        const website = firstUser.website && !blacklistedWebsite.test(firstUser.website) ? firstUser.website : '';
         const instagramUsername = webProfiles.find(profile => profile?.url && profile?.service?.includes('instagram'))?.username || '';
         const instagram = instagramUsername ? `https://instagram.com/${instagramUsername}` : '';
         const tstack = extractTstackLinks(userDescription);
