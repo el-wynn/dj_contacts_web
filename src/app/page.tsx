@@ -36,6 +36,7 @@ async function sha256(plain: string) {
 export default function Home() {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false); // State to control UI elements based on auth status
     const [isSearching, setIsSearching] = useState<boolean>(false); // State to control UI elements while searching
+    const [currentArtist, setCurrentArtist] = useState<string>(''); // State to display current artist being searched
     const [hasSearched, setHasSerached] = useState<boolean>(false); // State to display table when search is done
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]); // Replace 'any' with a proper type
@@ -159,10 +160,14 @@ export default function Home() {
             //.substring(0, 100);
     };
 
+    const handleEnter = (e: { key: string; }) => {
+        if (e.key === 'Enter') handleSearch();
+    }
+
     const handleSearch = async () => {
         const sanitizedQuery = sanitizeArtistInput(searchQuery);
         const artistList = sanitizedQuery.split(',')
-            .map(artist => artist.trim().toLowerCase())
+            .map(artist => artist.trim())
             .filter(artist => artist.length > 0);
 
         if (artistList.length === 0) {
@@ -177,6 +182,7 @@ export default function Home() {
         const notFound: string[] = [];
 
         for (const artist of uniqueArtists) {
+            setCurrentArtist(artist);
             try {
                 const response = await fetch(`/api/soundcloud/search?query=${encodeURIComponent(artist)}`);
                 const { success, data } = await response.json()
@@ -277,6 +283,7 @@ export default function Home() {
             <h1 className="text-2xl font-bold mb-4">DJ Contact Researcher</h1>
            
             {/* CSV import form */}
+            {/*
             <div className="mb-4">
                 <label htmlFor="csv-input" className="block text-gray-700 text-sm font-bold mb-2">
                     Import Contacts from CSV:
@@ -296,6 +303,7 @@ export default function Home() {
                 </button>
                 {csvError && <p className="text-red-500 text-xs italic">{csvError}</p>}
             </div>
+            */}
 
             {/* Artist input form */}
             <div className="mb-4">
@@ -314,6 +322,7 @@ export default function Home() {
                         setSearchQuery(cleanValue);
                     }}
                     maxLength={500}
+                    onKeyUp={handleEnter}
                 />
                 <button className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                   onClick={handleSearch}
@@ -432,7 +441,7 @@ export default function Home() {
                     zIndex: 1000,
                     cursor: 'wait', // Change cursor to wait
                 }}>
-                    <p>Searching...</p>
+                    <div className="animate-pulse text-white text-2xl">Searching for {currentArtist}...</div>
                 </div>
             )}
         </div>
