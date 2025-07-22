@@ -93,16 +93,16 @@ export async function GET(request: NextRequest) {
                      errorResponse.cookies.delete('accessToken');
                      errorResponse.cookies.delete('refreshToken');
                      return errorResponse;
-                } catch (e) {
-                     const errorResponse = NextResponse.json({ authenticated: false, error: 'Failed to refresh token', details: responseBody }, { status: tokenResponse.status });
+                } catch (error) {
+                     const errorResponse = NextResponse.json({ authenticated: false, error, details: responseBody }, { status: tokenResponse.status });
                      errorResponse.cookies.delete('accessToken');
                      errorResponse.cookies.delete('refreshToken');
                      return errorResponse;
                 }
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error during token refresh process:', error);
-             const errorResponse = NextResponse.json({ authenticated: false, error: 'Error during refresh process', details: error.message }, { status: 500 });
+             const errorResponse = NextResponse.json({ authenticated: false, error, details: 'Error during refresh process' }, { status: 500 });
              errorResponse.cookies.delete('accessToken');
              errorResponse.cookies.delete('refreshToken');
             return errorResponse;

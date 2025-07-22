@@ -46,7 +46,7 @@ export async function rateLimiter(
       // Check minute limit
       if (data.count > MAX_REQUESTS_PER_MINUTE) {
         return new NextResponse(
-          JSON.stringify({ error: `Too many requests, Limit: ${MAX_REQUESTS_PER_MINUTE}/minute` }),
+          JSON.stringify({ error: `Too many requests, Limit: ${MAX_REQUESTS_PER_MINUTE}/minute`, id }),
           { status: 429 }
         );
       }
