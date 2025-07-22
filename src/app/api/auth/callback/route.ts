@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
         maxAge: 24 * 30 * 3600, // Token expires in 30 days
       });
     } catch (error) {
-      console.error("Error setting cookies from callback");
+      console.error("Error setting cookies from callback", error);
     }
 
     return response;
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       console.error('Error during authentication:', error);
       return NextResponse.json(
-        { error: 'Authentication failed' }, 
+        { error: 'Authentication failed', details : error }, 
         { 
           status: 500,
           headers: {

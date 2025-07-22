@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { ContactInfo } from '@/lib/types';
 import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
-import { all } from 'axios';
 
 // Functions for SoundCloud PKCE Auth (kept as they are used by initiateAuth)
 function generateCodeVerifier(length: number = 128): string {
@@ -40,8 +39,8 @@ export default function Home() {
     const [hasSearched, setHasSerached] = useState<boolean>(false); // State to display table when search is done
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]); // Replace 'any' with a proper type
-    const [csvFile, setCsvFile] = useState<File | null>(null);
-    const [csvError, setCsvError] = useState<string | null>(null);
+    //const [csvFile, setCsvFile] = useState<File | null>(null);
+    //const [csvError, setCsvError] = useState<string | null>(null);
     const [notFoundArtists, setNotFoundArtists] = useState<string[]>([]);
     
 
@@ -57,7 +56,7 @@ export default function Home() {
                     setIsAuthenticated(false);
                 }
             } catch (error) {
-                console.error('Error checking auth status');
+                console.error('Error checking auth status : ' + error);
                 setIsAuthenticated(false);
             }
         };
@@ -117,10 +116,11 @@ export default function Home() {
                 console.error('Failed to disconnect from SoundCloud');
             }
         } catch (error) {
-            console.error('Error calling disconnect endpoint');
+            console.error('Error calling disconnect endpoint : ' + error);
         }
     };
 
+    /*
     const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file && file.type === 'text/csv') {
@@ -153,6 +153,7 @@ export default function Home() {
         };
         reader.readAsText(csvFile);
     };
+    */
 
     const sanitizeArtistInput = (input: string): string => {
         return input
@@ -197,7 +198,7 @@ export default function Home() {
                     notFound.push(artist);
                 }
             } catch (error) {
-                console.error(`Error calling SoundCloud search API for ${artist}`);
+                console.error(`Error calling SoundCloud search API for ${artist}`, error);
             }
         }
         setNotFoundArtists(notFound);

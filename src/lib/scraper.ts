@@ -3,9 +3,10 @@ import * as cheerio from 'cheerio';
 import { ContactInfo } from './types';
 import {blacklistedWebsites, blacklistedDomains, blacklistedExtensions} from './blacklists';
 
+/*
 interface ScrapeResult {
     [url: string]: string[];
-}
+}*/
 
 export function extractEmails(text: string): string[] {
     const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-z]{2,}/gi;
@@ -43,7 +44,7 @@ function extractLinks(html: string, baseUrl: string): string[] {
                 if (resolvedUrl.startsWith(baseUrl)) {
                     links.push(resolvedUrl);
                 }
-            } catch (e) {
+            } catch {
                 // Ignore invalid URLs
             }
         }
@@ -66,7 +67,7 @@ async function fetchPage(pageUrl: string): Promise<string | null> {
             timeout: 10000
         });
         return response.data;
-    } catch (error) {
+    } catch {
         // Handle errors silently
         return null;
     }
@@ -89,7 +90,7 @@ export async function scrapeEmails(startUrl: string): Promise<string[]> {
 
     // Prepare potential contact page URLs
     const contactPaths = ['contact', 'contact-us', 'contactus', 'about', 'about-us', 'aboutus', 'impressum'];
-    for (let path of contactPaths) {
+    for (const path of contactPaths) {
         const contactUrl = new URL(path, baseUrl).toString();
         // Some websites may expect these paths with or without trailing slashes
         queue.push(contactUrl);
@@ -121,7 +122,7 @@ export async function scrapeEmails(startUrl: string): Promise<string[]> {
 
         // Extract links from page
         const links = extractLinks(html, baseUrl);
-        for (let link of links) {
+        for (const link of links) {
             if (!visited.has(link)) {
                 queue.push(link);
             }
@@ -149,7 +150,6 @@ export async function scrapeWebsite(url: string): Promise<ContactInfo> {
         const html = await response.text();
         const $ = cheerio.load(html);
 
-        let website = '';
         let instagram = '';
         let demoEmail = '';
         let tstack = '';
@@ -172,7 +172,6 @@ export async function scrapeWebsite(url: string): Promise<ContactInfo> {
             }
         });
 
-        const emails: string[] = [];
         for (const link of links) {
             if (link.includes("instagram.com") && !instagram) instagram = link;
             if (link.includes("tstack.app") && !tstack) tstack = link;
@@ -182,7 +181,7 @@ export async function scrapeWebsite(url: string): Promise<ContactInfo> {
         const extractedEmails = await scrapeEmails(url);
         demoEmail = extractedEmails.join('; ');
 
-        const result = { website, instagram, demoEmail, tstack };
+        const result = { url, instagram, demoEmail, tstack };
 
         return result;
     } catch (error) {
