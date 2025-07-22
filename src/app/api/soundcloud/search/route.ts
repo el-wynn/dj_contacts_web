@@ -1,9 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { rateLimiter } from '@/lib/rateLimit';
-import { scrapeEmails } from '@/lib/scraper';
-import { extractEmails } from '@/lib/scraper';
+import { extractEmails, extractTstackLinks, scrapeWebsite } from '@/lib/scraper';
 import { ContactInfo } from '@/lib/types';
-import * as cheerio from 'cheerio';
 
 // Simple in-memory cache with 5 minute TTL
 const scrapeCache = new Map<string, {data: any, timestamp: number}>();
@@ -26,75 +24,8 @@ function setCachedResult(url: string, data: any) {
     console.log(`Cached data for ${url}`);
 }
 
-// Helper function to extract tstack.app links from text
-function extractTstackLinks(text: string): string {
-    const tstackRegex = /https:\/\/(www\.)?tstack\.app\/[a-zA-Z0-9_]+/g;
-    const match = text.match(tstackRegex);
-    return match ? match[0] : '';
-}
-
 // Helper function to scrape a website and extract contact information
-async function scrapeWebsite(url: string): Promise<ContactInfo> {
-    try {
-        const response = await fetch(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (compatible; ContactFinder/1.0)'
-            },
-            signal: AbortSignal.timeout(10000)
-        })
 
-        if (!response.ok) {
-            console.error(`Failed to fetch website: ${url} - Status: ${response.status} ${response.statusText}`);
-            return {};
-        }
-
-        const html = await response.text();
-        const $ = cheerio.load(html);
-
-        let website = '';
-        let instagram = '';
-        let demoEmail = '';
-        let tstack = '';
-
-        // Extract Instagram link from meta tags (more reliable)
-        $('meta[property="og:url"]').each((i, elem) => {
-            const content = $(elem).attr('content');
-            if (content && content.includes('instagram.com')) {
-                instagram = content;
-                return false; // Stop after first match
-            }
-        });
-
-        // Extract all links and search for contact info
-        const links: string[] = [];
-        $('a').each((i, elem) => {
-            const href = $(elem).attr('href');
-            if (href) {
-                links.push(href);
-            }
-        });
-
-        const emails: string[] = [];
-        for (const link of links) {
-            if (link.includes("instagram.com") && !instagram) instagram = link;
-            if (link.includes("tstack.app") && !tstack) tstack = link;
-        }
-
-        //Extract email addresses
-        const extractedEmails = await scrapeEmails(url);
-        demoEmail = extractedEmails.join('; ');
-
-        const result = { website, instagram, demoEmail, tstack };
-        
-        // Update cache
-        setCachedResult(url, result);
-
-        return result;
-    } catch (error) {
-        console.error(`Error scraping website ${url}:`, error);
-        return {};
-    }
-}
 
 export async function GET(request: NextRequest) {
     try {
@@ -189,6 +120,7 @@ export async function GET(request: NextRequest) {
             else {
                 console.log(`Checking website for additional info: ${website}`);
                 scrapedData = await scrapeWebsite(website) ;
+                setCachedResult(website, scrapedData);
             }
         }
 

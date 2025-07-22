@@ -1,5 +1,7 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { ContactInfo } from './types';
+import {blacklistedWebsites, blacklistedDomains, blacklistedExtensions} from './blacklists';
 
 interface ScrapeResult {
     [url: string]: string[];
@@ -15,11 +17,11 @@ export function extractEmails(text: string): string[] {
     emails.map(email => email.toLowerCase());
 
     // Blacklist certain file extensions to filter out false positives
-    const blacklistedExtensions = ['.jpg', '.jpeg', '.png', '.svg', '.gif','.tga', '.bmp', '.zip', '.pdf', '.webp'];
-    emails = emails.filter((email: string) => !blacklistedExtensions.some(ext => email.endsWith(ext)));
+    
+    emails = emails.filter((email: string) => !blacklistedExtensions.test(email));
 
     // Remove agency and management email addresses
-    const blacklistedDomains = /agency|management|entertainment|talent|mgmt|booking|press|domain\.com|example|sentry|teamwass/i;
+    
     emails = emails.filter((email: string) => !blacklistedDomains.test(email));
 
     // Lowercase
@@ -47,6 +49,12 @@ function extractLinks(html: string, baseUrl: string): string[] {
         }
     });
     return links;
+}
+
+export function extractTstackLinks(text: string): string {
+    const tstackRegex = /https:\/\/(www\.)?tstack\.app\/[a-zA-Z0-9_]+/g;
+    const match = text.match(tstackRegex);
+    return match ? match[0] : '';
 }
 
 async function fetchPage(pageUrl: string): Promise<string | null> {
@@ -121,6 +129,66 @@ export async function scrapeEmails(startUrl: string): Promise<string[]> {
     }
 
     return Array.from(emailsFound) as string[];
+}
+
+export async function scrapeWebsite(url: string): Promise<ContactInfo> {
+    if (!url || blacklistedWebsites.test(url)) return {};
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (compatible; ContactFinder/1.0)'
+            },
+            signal: AbortSignal.timeout(10000)
+        })
+
+        if (!response.ok) {
+            console.error(`Failed to fetch website: ${url} - Status: ${response.status} ${response.statusText}`);
+            return {};
+        }
+
+        const html = await response.text();
+        const $ = cheerio.load(html);
+
+        let website = '';
+        let instagram = '';
+        let demoEmail = '';
+        let tstack = '';
+
+        // Extract Instagram link from meta tags (more reliable)
+        $('meta[property="og:url"]').each((i, elem) => {
+            const content = $(elem).attr('content');
+            if (content && content.includes('instagram.com')) {
+                instagram = content;
+                return false; // Stop after first match
+            }
+        });
+
+        // Extract all links and search for contact info
+        const links: string[] = [];
+        $('a').each((i, elem) => {
+            const href = $(elem).attr('href');
+            if (href) {
+                links.push(href);
+            }
+        });
+
+        const emails: string[] = [];
+        for (const link of links) {
+            if (link.includes("instagram.com") && !instagram) instagram = link;
+            if (link.includes("tstack.app") && !tstack) tstack = link;
+        }
+
+        //Extract email addresses
+        const extractedEmails = await scrapeEmails(url);
+        demoEmail = extractedEmails.join('; ');
+
+        const result = { website, instagram, demoEmail, tstack };
+
+        return result;
+    } catch (error) {
+        console.error(`Error scraping website ${url}:`, error);
+        return {};
+    }
 }
 
 /* // Exemple of use 
