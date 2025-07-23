@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   // Verify state parameter matches expected value
   if (!state || !expectedState || state !== expectedState) {
     console.error('Invalid state parameter');
-    return NextResponse.json({ error: 'Authentication failed' }, { status: 400 });
+    return NextResponse.json({ error: 'This authentication failed ' + state?.toString + " | " + expectedState?.toString }, { status: 400 });
   }
 
   if (!code) {
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       console.error('Error during authentication:', error);
       return NextResponse.json(
-        { error: 'Authentication failed', details : error }, 
+        { error, message: 'Authentication failed' }, 
         { 
           status: 500,
           headers: {
