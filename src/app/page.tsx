@@ -94,7 +94,7 @@ export default function Home() {
 
         // Set secure cookies for PKCE and state parameters
         const cookieOptions = process.env.NODE_ENV === 'production' ? 
-            `; path=/; secure; sameSite=strict; max-age=3600` : 
+            `; path=/; secure; sameSite=lax; max-age=3600` : 
             `; path=/; max-age=3600`;
 
         document.cookie = `code_verifier=${codeVerifier}${cookieOptions}`;
