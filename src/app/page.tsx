@@ -369,7 +369,7 @@ export default function Home() {
                                         <td className="border px-4 py-2">
                                             {result.instagram ? (
                                                 <a 
-                                                    href={DOMPurify.sanitize(result.instagram)} 
+                                                    href={sanitize(result.instagram)} 
                                                     target="_blank" 
                                                     rel="noopener noreferrer" 
                                                     className="text-blue-500"
@@ -394,7 +394,16 @@ export default function Home() {
                                             ) : null}
                                         </td>
                                         <td className="border px-4 py-2">
-                                            {sanitize(result.tstack)}
+                                            {result.tstack ? (
+                                                <a 
+                                                    href={sanitize(result.tstack)} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer" 
+                                                    className="text-blue-500"
+                                                >
+                                                    {sanitize(result.tstack)}
+                                                    </a>
+                                            ) : null}
                                         </td>
                                     </tr>
                                 ) : (

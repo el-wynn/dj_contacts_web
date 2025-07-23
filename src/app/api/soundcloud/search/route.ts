@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { rateLimiter } from '@/lib/rateLimit';
-import { extractEmails, extractTstackLinks, scrapeWebsite } from '@/lib/scraper';
+import { extractEmails, extractTstackLinks, extractSoundCloundLinks, scrapeWebsite } from '@/lib/scraper';
 import { ContactInfo } from '@/lib/types';
 
 // Simple in-memory cache with 5 minute TTL
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
         const instagram = instagramUsername ? `https://instagram.com/${instagramUsername}` : '';
         const tstack = extractTstackLinks(userDescription);
         const demoEmail = extractEmails(userDescription).join('; ');
-        const soundcloudLink = firstUser.permalink_url || '';
+        const soundcloudLink = extractSoundCloundLinks(firstUser.permalink_url);
 
         // 5. Scrape the website if available and missing info
         let scrapedData: { website?: string; instagram?: string; demoEmail?: string; tstack?: string } = {};

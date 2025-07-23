@@ -53,8 +53,14 @@ function extractLinks(html: string, baseUrl: string): string[] {
 }
 
 export function extractTstackLinks(text: string): string {
-    const tstackRegex = /https:\/\/(www\.)?tstack\.app\/[a-zA-Z0-9_]+/g;
+    const tstackRegex = /(https:\/\/)?(www\.)?tstack\.app\/[a-zA-Z0-9_]+/g;
     const match = text.match(tstackRegex);
+    return match ? match[0] : '';
+}
+
+export function extractSoundCloundLinks(text: string): string {
+    const soundCloudRegex = /(https:\/\/)?(www\.)?soundcloud\.com\/[a-zA-Z0-9_]+/g;
+    const match = text.match(soundCloudRegex);
     return match ? match[0] : '';
 }
 
