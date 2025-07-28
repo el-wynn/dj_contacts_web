@@ -53,13 +53,13 @@ function extractLinks(html: string, baseUrl: string): string[] {
 }
 
 export function extractTstackLinks(text: string): string {
-    const tstackRegex = /(https:\/\/)?(www\.)?tstack\.app\/[a-zA-Z0-9_]+/g;
+    const tstackRegex = /(https:\/\/)?(www\.)?tstack\.app\/[a-zA-Z0-9_\-]+/g;
     const match = text.match(tstackRegex);
     return match ? match[0] : '';
 }
 
 export function extractSoundCloundLinks(text: string): string {
-    const soundCloudRegex = /(https:\/\/)?(www\.)?soundcloud\.com\/[a-zA-Z0-9_]+/g;
+    const soundCloudRegex = /(https:\/\/)?(www\.)?soundcloud\.com\/[a-zA-Z0-9_\-]+/g;
     const match = text.match(soundCloudRegex);
     return match ? match[0] : '';
 }
@@ -79,12 +79,13 @@ async function fetchPage(pageUrl: string): Promise<string | null> {
     }
 }
 
+// TODO : return content after x seconds even if not finished
 export async function scrapeEmails(startUrl: string): Promise<string[]> {
     const emailsFound = new Set();
     const visited = new Set();
     const queue = [];
 
-    const maxPages = 40;
+    const maxPages = 15;
     let pagesScraped = 0;
     let emailFound = false;
 
@@ -140,13 +141,17 @@ export async function scrapeEmails(startUrl: string): Promise<string[]> {
 
 export async function scrapeWebsite(url: string): Promise<ContactInfo> {
     if (!url || blacklistedWebsites.test(url)) return {};
+    const controller = new AbortController(); 
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
     try {
         const response = await fetch(url, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (compatible; ContactFinder/1.0)'
             },
-            signal: AbortSignal.timeout(10000)
+            signal: controller.signal
         })
+
+        clearTimeout(timeoutId); // Clear the timeout
 
         if (!response.ok) {
             console.error(`Failed to fetch website: ${url} - Status: ${response.status} ${response.statusText}`);
@@ -183,8 +188,25 @@ export async function scrapeWebsite(url: string): Promise<ContactInfo> {
             if (link.includes("tstack.app") && !tstack) tstack = link;
         }
 
-        //Extract email addresses
-        const extractedEmails = await scrapeEmails(url);
+        //Extract email addresses, will stop after 5 seconds
+        let extractedEmails: string[] = [];
+        try {
+            // Define a timeout duration for scrapeEmails
+            const scrapeEmailsTimeout = 5000;
+            const scrapeEmailsPromise = scrapeEmails(url);
+
+            const timeoutPromise = new Promise<string[]>((resolve) => {
+                setTimeout(() => {
+                    console.error(`scrapeEmails timed out after ${scrapeEmailsTimeout}ms for ${url}`);
+                    resolve([]); // Resolve with empty array on timeout
+                }, scrapeEmailsTimeout);
+            });
+
+            extractedEmails = await Promise.race([scrapeEmailsPromise, timeoutPromise]);
+        } catch (error) {
+            console.error(`Error during scrapeEmails execution for ${url}:`, error);
+            extractedEmails = []; // Ensure emails are empty if an error occurs
+        }
         demoEmail = extractedEmails.join('; ');
 
         const result = { url, instagram, demoEmail, tstack };

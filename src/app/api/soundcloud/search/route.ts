@@ -4,6 +4,7 @@ import { extractEmails, extractTstackLinks, extractSoundCloundLinks, scrapeWebsi
 import { ContactInfo } from '@/lib/types';
 
 // Simple in-memory cache with 5 minute TTL
+// TODO : move cache to more robust memory
 const scrapeCache = new Map<string, {data: any, timestamp: number}>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -111,6 +112,7 @@ export async function GET(request: NextRequest) {
         const tstack = extractTstackLinks(userDescription);
         const demoEmail = extractEmails(userDescription).join('; ');
         const soundcloudLink = extractSoundCloundLinks(firstUser.permalink_url);
+        const bandcamp = webProfiles.find(profile => profile?.url && profile?.service?.includes('bandcamp'))?.url || '';
 
         // 5. Scrape the website if available and missing info
         let scrapedData: { website?: string; instagram?: string; demoEmail?: string; tstack?: string } = {};
@@ -127,7 +129,7 @@ export async function GET(request: NextRequest) {
         // 6. Construct the result object, prioritize SoundCloud API data
         const result = {
             djName: firstUser.username,
-            website: website || scrapedData.website || '', // Prefer API website
+            website: website || scrapedData.website || bandcamp || '', // Prefer API website, bandcamp in last resort
             instagram: instagram || scrapedData.instagram || '', // Prefer API instagram
             demoEmail: [demoEmail, scrapedData.demoEmail].filter(Boolean).join('; '), // Add either or concat both
             soundCloud: soundcloudLink,
