@@ -1,35 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { ContactInfo } from '@/lib/types';
+import { generateCodeVerifier, generateCodeChallenge } from '@/lib/pkce';
 import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
-
-// Functions for SoundCloud PKCE Auth (kept as they are used by initiateAuth)
-function generateCodeVerifier(length: number = 128): string {
-    let text = '';
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
-    for (let i = 0; i < length; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
-}
-
-async function generateCodeChallenge(codeVerifier: string): Promise<string> {
-    const digest = await sha256(codeVerifier);
-    const buffer = new Uint8Array(digest);
-    const challenge = btoa(String.fromCharCode(...new Uint8Array(buffer)))
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-    return challenge;
-}
-
-async function sha256(plain: string) {
-    const utf8 = new TextEncoder().encode(plain);
-    const digest = await window.crypto.subtle.digest('SHA-256', utf8);
-    return digest;
-}
-// End SoundCloud PKCE Auth functions
 
 
 export default function Home() {
