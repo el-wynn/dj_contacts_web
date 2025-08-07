@@ -1,9 +1,15 @@
 import { NextResponse, NextRequest } from 'next/server';
 
+function getBaseURL(request: NextRequest): string {
+  const host = request.headers.get('host');
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+  return `${protocol}://${host}`;
+}
+
 export async function GET(request: NextRequest) {
   console.log('Disconnect endpoint accessed.');
 
-  const response = NextResponse.redirect(new URL('/', request.url)); // Redirect to home page
+  const response = NextResponse.redirect(new URL('/', getBaseURL(request))); // Redirect to home page
 
   // Clear the access and refresh tokens by setting maxAge to 0
   try {

@@ -1,5 +1,11 @@
 import { NextResponse, NextRequest } from 'next/server';
 
+function getBaseURL(request: NextRequest): string {
+  const host = request.headers.get('host');
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+  return `${protocol}://${host}`;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
@@ -44,7 +50,7 @@ export async function GET(request: NextRequest) {
     const tokenData = await tokenResponse.json();
     const { access_token, refresh_token } = tokenData;
 
-    const response = NextResponse.redirect(new URL('/', request.url));
+    const response = NextResponse.redirect(new URL('/', getBaseURL(request)));
     response.cookies.delete('code_verifier');
 
     try {
