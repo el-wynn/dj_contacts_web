@@ -4,6 +4,7 @@ import { ContactInfo } from '@/lib/types';
 import { generateCodeVerifier, generateCodeChallenge } from '@/lib/pkce';
 import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
+import { saveState } from '@/lib/statestore';
 
 
 export default function Home() {
@@ -113,7 +114,7 @@ export default function Home() {
         // Set secure cookies for PKCE and state parameters
         const cookieOptions = process.env.NODE_ENV === 'production' ? 
             `; path=/; secure; sameSite=lax; max-age=3600` : 
-            `; path=/; max-age=3600`; 
+            `; path=/; domain=127.0.0.1; max-age=3600`; 
         document.cookie = `spotify_code_verifier=${codeVerifier}${cookieOptions}`;
         document.cookie = `spotify_oauth_state=${state}${cookieOptions}`;
 

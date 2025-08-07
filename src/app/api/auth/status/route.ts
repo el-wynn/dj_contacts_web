@@ -4,16 +4,15 @@ export async function GET(request: NextRequest) {
     const accessToken = request.cookies.get('accessToken')?.value;
     const refreshToken = request.cookies.get('refreshToken')?.value;
 
-    console.log('Auth status endpoint accessed.');
-    console.log('Access token found:', accessToken ? 'Exists' : 'Does not exist');
-    console.log('Refresh token found:', refreshToken ? 'Exists' : 'Does not exist');
+    console.log('SC: Access token found:', accessToken ? 'Exists' : 'Does not exist');
+    console.log('SC: Refresh token found:', refreshToken ? 'Exists' : 'Does not exist');
 
 
     // In a real app, you'd validate access token expiry here.
     // For simplicity, we'll assume if accessToken exists, it's valid for this check.
     // TODO : Validate access token expiry
     if (accessToken) {
-        console.log('Access token exists. User is authenticated.');
+        console.log('SC: Access token exists. User is authenticated.');
         return NextResponse.json({ authenticated: true });
     }
 
@@ -110,7 +109,7 @@ export async function GET(request: NextRequest) {
     }
 
     // If neither token exists
-    console.log('Neither access nor refresh token found. User is not authenticated.');
+    console.log('SC: Neither access nor refresh token found. User is not authenticated.');
      const response = NextResponse.json({ authenticated: false });
      response.cookies.delete('accessToken'); // Ensure no stale cookies remain
      response.cookies.delete('refreshToken');

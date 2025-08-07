@@ -1,27 +1,56 @@
 import { NextResponse, NextRequest } from 'next/server';
 
+function getBaseURL(request: NextRequest): string {
+  const host = request.headers.get('host');
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+  return `${protocol}://${host}`;
+}
+
 export async function GET(request: NextRequest) {
+  const baseURL = getBaseURL(request);
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const state = searchParams.get('state');
   const error = searchParams.get('error');
 
+  console.log('Incoming Request:', {
+    url: baseURL,
+    requestURL: request.url,
+    headers: Object.fromEntries(request.headers),
+    cookies: request.cookies.getAll()
+  });
+
   // Handle OAuth errors first
   if (error) {
     console.error('Spotify OAuth error:', error);
-    return NextResponse.redirect(new URL(`/?error=${error}`, request.url));
+    return NextResponse.redirect(new URL(`/?error=${error}`, baseURL));
   }
 
   // Verify state matches cookie
-  const savedState = request.cookies.get('spotify_oauth_state')?.value;
+  let savedState = request.cookies.get('spotify_oauth_state')?.value;
+
+  // if not in cookies, use local statestore
+  if (!savedState) {
+    const sessionId = searchParams.get('session_id');
+    const manualState = (sessionId && process.env.NODE_ENV === 'development')
+      ? (await import('@/lib/statestore')).getState(sessionId)
+      : null;
+    
+    if (manualState) {
+      console.warn('Using manual state fallback');
+      savedState = manualState;
+    }
+  }
+
   if (!state || !savedState || state !== savedState) {
-    console.error('State mismatch or missing');
-    return NextResponse.redirect(new URL('/?error=state_mismatch', request.url));
+    console.error('State mismatch or missing (' + state + "|" + savedState + ')');
+    request.cookies.delete('spotify_oauth_state');
+    return NextResponse.redirect(new URL('/?error=state_mismatch', baseURL));
   }
 
   if (!code) {
     console.error('Missing authorization code');
-    return NextResponse.redirect(new URL('/?error=missing_code', request.url));
+    return NextResponse.redirect(new URL('/?error=missing_code', baseURL));
   }
 
   try {
@@ -50,7 +79,7 @@ export async function GET(request: NextRequest) {
 
     const { access_token, refresh_token, expires_in } = await tokenResponse.json();
 
-    const response = NextResponse.redirect(new URL('/', request.url));
+    const response = NextResponse.redirect(new URL('/', baseURL));
     
     // Set cookies using request.cookies
     response.cookies.set({
@@ -83,7 +112,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error('Spotify callback error:', err);
     const response = NextResponse.redirect(
-      new URL('/?error=authentication_failed', request.url)
+      new URL('/?error=authentication_failed', baseURL)
     );
     // Clear auth cookies on error
     response.cookies.delete('spotify_access_token');
