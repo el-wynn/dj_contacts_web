@@ -7,7 +7,8 @@ import DOMPurify from 'dompurify';
 
 
 export default function Home() {
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false); // State to control UI elements based on auth status
+    const [isSoundCloudAuth, setIsSoundCloudAuth] = useState<boolean>(false); // State to control UI elements based on auth status
+    const [isSpotifyAuth, setIsSpotifyAuth] = useState<boolean>(false); // State to control UI elements based on auth status
     const [isSearching, setIsSearching] = useState<boolean>(false); // State to control UI elements while searching
     const [currentArtist, setCurrentArtist] = useState<string>(''); // State to display current artist being searched
     const [hasSearched, setHasSerached] = useState<boolean>(false); // State to display table when search is done
@@ -20,23 +21,40 @@ export default function Home() {
 
     useEffect(() => {
         // Function to check authentication status using the server-side endpoint
-        const checkAuthStatus = async () => {
+        const checkSoundCloudAuthStatus = async () => {
             try {
                 const response = await fetch('/api/auth/status');
                 if (response.ok) {
                     const data = await response.json();
-                    setIsAuthenticated(data.authenticated);
+                    setIsSoundCloudAuth(data.authenticated);
                 } else {
-                    setIsAuthenticated(false);
+                    setIsSoundCloudAuth(false);
                 }
             } catch (error) {
-                console.error('Error checking auth status : ' + error);
-                setIsAuthenticated(false);
+                console.error('Error checking SoundCloud auth status : ' + error);
+                setIsSoundCloudAuth(false);
             }
         };
 
         // Check auth status on component mount
-        checkAuthStatus();
+        checkSoundCloudAuthStatus();
+
+        const checkSpotifyAuthStatus = async () => {
+            try {
+                const response = await fetch('/api/spotify/auth/status');
+                if (response.ok) {
+                    const data = await response.json();
+                    setIsSpotifyAuth(data.authenticated);
+                } else {
+                    setIsSpotifyAuth(false);
+                }
+            } catch (error) {
+                console.error('Error checking Spotify auth status : ' + error);
+                setIsSpotifyAuth(false);
+            }
+        };
+
+        checkSpotifyAuthStatus();
 
         // Periodically trigger the server-side refresh token endpoint
         // The server will handle the actual token expiry check and refresh logic
@@ -44,7 +62,7 @@ export default function Home() {
 
         const intervalId = setInterval(() => {
              // Call the status endpoint, which will internally trigger refresh if needed
-             checkAuthStatus();
+             checkSoundCloudAuthStatus();
          }, accessTokenRefreshInterval);
 
 
@@ -58,13 +76,13 @@ export default function Home() {
         };
     }, [isSearching]);
 
-    const initiateAuth = async () => {
+    const initiateSoundCloudAuth = async () => {
         const codeVerifier = generateCodeVerifier();
         const codeChallenge = await generateCodeChallenge(codeVerifier);
+        const state = generateCodeVerifier(32);
 
         const clientId = process.env.NEXT_PUBLIC_SOUNDCLOUD_CLIENT_ID;
         const redirectUri = process.env.NEXT_PUBLIC_SOUNDCLOUD_REDIRECT_URI;
-        const state = generateCodeVerifier(32);
 
         // Set secure cookies for PKCE and state parameters
         const cookieOptions = process.env.NODE_ENV === 'production' ? 
@@ -79,13 +97,49 @@ export default function Home() {
         window.location.href = authorizationEndpoint;
     };
 
-    const terminateAuth = async () => {
+    const initiateSpotifyAuth = async () => {
+        const codeVerifier = generateCodeVerifier();
+        const codeChallenge = await generateCodeChallenge(codeVerifier);
+        const state = generateCodeVerifier(32);
+
+        const sessionId = crypto.randomUUID(); // or use a simple timestamp
+        saveState(sessionId, state);
+
+        console.log(state);
+
+        const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || "";
+        const redirectUri = process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI || "";
+
+        // Set secure cookies for PKCE and state parameters
+        const cookieOptions = process.env.NODE_ENV === 'production' ? 
+            `; path=/; secure; sameSite=lax; max-age=3600` : 
+            `; path=/; max-age=3600`; 
+        document.cookie = `spotify_code_verifier=${codeVerifier}${cookieOptions}`;
+        document.cookie = `spotify_oauth_state=${state}${cookieOptions}`;
+
+        const authUrl = new URL("https://accounts.spotify.com/authorize");
+        const params =  {
+            response_type: 'code',
+            client_id: clientId,
+            scope: 'playlist-read-private playlist-read-collaborative',
+            code_challenge_method: 'S256',
+            code_challenge: codeChallenge,
+            redirect_uri: redirectUri,
+            state: state,
+            session_id: sessionId,
+        }
+
+        authUrl.search = new URLSearchParams(params).toString();
+        window.location.href = authUrl.toString();
+    };
+
+    const terminateSoundCloudAuth = async () => {
         try {
             const response = await fetch('/api/auth/disconnect');
             if (response.ok) {
                 console.log('Successfully disconnected from SoundCloud.');
                 // Refresh the page or update the isAuthenticated state (client side) to reflect disconnection.
-                setIsAuthenticated(false);
+                setIsSoundCloudAuth(false);
             } else {
                 console.error('Failed to disconnect from SoundCloud');
             }
@@ -238,17 +292,28 @@ export default function Home() {
     return (
         <div className="container mx-auto p-4">
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', marginBottom: '20px' }}>
-                {isAuthenticated ? (
+                {isSpotifyAuth ? (
+                    <p>Connected to Spotify</p>
+                ) : (
+                    <button 
+                        className="mt-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        onClick={initiateSpotifyAuth}
+                        style={{ cursor: 'pointer' }} 
+                    >Connect to Spotify</button>
+                )}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', marginBottom: '20px' }}>
+                {isSoundCloudAuth ? (
                     <img
                         src="https://connect.soundcloud.com/2/btn-disconnect-l.png"
-                        onClick={terminateAuth}
+                        onClick={terminateSoundCloudAuth}
                         style={{ cursor: 'pointer' }}
                         alt="Disconnect from SoundCloud"
                     ></img>
                 ) : (
                     <img
                         src="https://connect.soundcloud.com/2/btn-connect-sc-l.png"
-                        onClick={initiateAuth}
+                        onClick={initiateSoundCloudAuth}
                         style={{ cursor: 'pointer' }} 
                         alt="Connect to SoundCloud"
                     ></img>
