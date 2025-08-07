@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   // Clear the access and refresh tokens by setting maxAge to 0
   try {
-    response.cookies.set('accessToken', '', {
+    response.cookies.set('soundcloud_access_token', '', {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       maxAge: 0,
     });
 
-    response.cookies.set('refreshToken', '', {
+    response.cookies.set('soundcloud_refresh_token', '', {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',

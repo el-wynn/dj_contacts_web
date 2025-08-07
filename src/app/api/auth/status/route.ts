@@ -1,8 +1,8 @@
 import { NextResponse, NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest) {
-    const accessToken = request.cookies.get('accessToken')?.value;
-    const refreshToken = request.cookies.get('refreshToken')?.value;
+    const accessToken = request.cookies.get('soundcloud_access_token')?.value;
+    const refreshToken = request.cookies.get('soundcloud_refresh_token')?.value;
 
     console.log('SC: Access token found:', accessToken ? 'Exists' : 'Does not exist');
     console.log('SC: Refresh token found:', refreshToken ? 'Exists' : 'Does not exist');
@@ -48,13 +48,13 @@ export async function GET(request: NextRequest) {
             if (tokenResponse.ok) {
                 console.log('Token refreshed successfully.');
                 const tokenData = JSON.parse(responseBody);
-                const { access_token, refresh_token: newRefreshToken } = tokenData;
+                const { access_token: accessToken, refresh_token: newRefreshToken } = tokenData;
 
                 // Create a response object to set cookies
                 const response = NextResponse.json({ authenticated: true });
 
                 // Always set the new access token cookie
-                 response.cookies.set('accessToken', access_token, {
+                 response.cookies.set('soundcloud_access_token', accessToken, {
                      httpOnly: true,
                      secure: process.env.NODE_ENV === 'production',
                      path: '/',
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
                 // **Explicitly update the refresh token cookie if a new one is provided**
                  if (newRefreshToken) {
                      console.log('New refresh token received. Updating refresh token cookie.');
-                     response.cookies.set('refreshToken', newRefreshToken, {
+                     response.cookies.set('soundcloud_refresh_token', newRefreshToken, {
                          httpOnly: true,
                          secure: true,
                          sameSite: 'lax',
@@ -89,21 +89,21 @@ export async function GET(request: NextRequest) {
                      console.error('SoundCloud API error details:', errorData);
                      // If refresh fails, the refresh token might be invalid/expired. Clear cookies.
                      const errorResponse = NextResponse.json({ authenticated: false, error: 'Failed to refresh token', details: errorData }, { status: tokenResponse.status });
-                     errorResponse.cookies.delete('accessToken');
-                     errorResponse.cookies.delete('refreshToken');
+                     errorResponse.cookies.delete('soundcloud_access_token');
+                     errorResponse.cookies.delete('soundcloud_refresh_token');
                      return errorResponse;
                 } catch (error) {
                      const errorResponse = NextResponse.json({ authenticated: false, error, details: responseBody }, { status: tokenResponse.status });
-                     errorResponse.cookies.delete('accessToken');
-                     errorResponse.cookies.delete('refreshToken');
+                     errorResponse.cookies.delete('soundcloud_access_token');
+                     errorResponse.cookies.delete('soundcloud_refresh_token');
                      return errorResponse;
                 }
             }
         } catch (error) {
             console.error('Error during token refresh process:', error);
              const errorResponse = NextResponse.json({ authenticated: false, error, details: 'Error during refresh process' }, { status: 500 });
-             errorResponse.cookies.delete('accessToken');
-             errorResponse.cookies.delete('refreshToken');
+             errorResponse.cookies.delete('soundcloud_access_token');
+             errorResponse.cookies.delete('soundcloud_refresh_token');
             return errorResponse;
         }
     }
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
     // If neither token exists
     console.log('SC: Neither access nor refresh token found. User is not authenticated.');
      const response = NextResponse.json({ authenticated: false });
-     response.cookies.delete('accessToken'); // Ensure no stale cookies remain
-     response.cookies.delete('refreshToken');
+     response.cookies.delete('soundcloud_access_token'); // Ensure no stale cookies remain
+     response.cookies.delete('soundcloud_refresh_token');
     return response;
 }

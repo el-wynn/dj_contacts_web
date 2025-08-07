@@ -23,6 +23,7 @@ export default function Home() {
     useEffect(() => {
         // Function to check authentication status using the server-side endpoint
         const checkSoundCloudAuthStatus = async () => {
+            // TODO : Loading state
             try {
                 const response = await fetch('/api/auth/status');
                 if (response.ok) {
@@ -41,6 +42,7 @@ export default function Home() {
         checkSoundCloudAuthStatus();
 
         const checkSpotifyAuthStatus = async () => {
+            // TODO : Loading state
             try {
                 const response = await fetch('/api/spotify/auth/status');
                 if (response.ok) {
@@ -90,8 +92,8 @@ export default function Home() {
             `; path=/; secure; sameSite=lax; max-age=3600` : 
             `; path=/; max-age=3600`;
 
-        document.cookie = `code_verifier=${codeVerifier}${cookieOptions}`;
-        document.cookie = `oauth_state=${state}${cookieOptions}`;
+        document.cookie = `soundcloud_code_verifier=${codeVerifier}${cookieOptions}`;
+        document.cookie = `soundcloud_oauth_state=${state}${cookieOptions}`;
 
         const authorizationEndpoint = `https://secure.soundcloud.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri ?? '')}&response_type=code&code_challenge=${codeChallenge}&code_challenge_method=S256&state=${state}`;
 

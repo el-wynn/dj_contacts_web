@@ -7,18 +7,19 @@ function getBaseURL(request: NextRequest): string {
 }
 
 export async function GET(request: NextRequest) {
-  const baseURL = getBaseURL(request);
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const state = searchParams.get('state');
   const error = searchParams.get('error');
 
-  console.log('Incoming Request:', {
-    url: baseURL,
+  const baseURL = getBaseURL(request);
+
+  /*console.log('Incoming Request:', {
+     url: baseURL,
     requestURL: request.url,
     headers: Object.fromEntries(request.headers),
     cookies: request.cookies.getAll()
-  });
+  }); */
 
   // Handle OAuth errors first
   if (error) {
@@ -27,10 +28,10 @@ export async function GET(request: NextRequest) {
   }
 
   // Verify state matches cookie
-  let savedState = request.cookies.get('spotify_oauth_state')?.value;
+  let expectedState = request.cookies.get('spotify_oauth_state')?.value;
 
   // if not in cookies, use local statestore
-  if (!savedState) {
+  /* if (!savedState) {
     const sessionId = searchParams.get('session_id');
     const manualState = (sessionId && process.env.NODE_ENV === 'development')
       ? (await import('@/lib/statestore')).getState(sessionId)
@@ -38,12 +39,12 @@ export async function GET(request: NextRequest) {
     
     if (manualState) {
       console.warn('Using manual state fallback');
-      savedState = manualState;
+      expectedState = manualState;
     }
-  }
+  } */
 
-  if (!state || !savedState || state !== savedState) {
-    console.error('State mismatch or missing (' + state + "|" + savedState + ')');
+  if (!state || !expectedState || state !== expectedState) {
+    console.error('State mismatch or missing');
     request.cookies.delete('spotify_oauth_state');
     return NextResponse.redirect(new URL('/?error=state_mismatch', baseURL));
   }
@@ -54,20 +55,19 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const authString = Buffer.from(
-      `${process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
-    ).toString('base64');
+    const codeVerifier = request.cookies.get('spotify_code_verifier')?.value;
 
     const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${authString}`,
       },
       body: new URLSearchParams({
+        client_id : process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || '',
         grant_type: 'authorization_code',
         code,
         redirect_uri: process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI || '',
+        code_verifier: codeVerifier || '',
       }),
     });
 
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: expires_in,
+      maxAge: expires_in || 3600, // 1 hour
     });
 
     if (refresh_token) {
@@ -104,8 +104,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Clean up state cookie
+    // Clean up cookies
     response.cookies.delete('spotify_oauth_state');
+    response.cookies.delete('spotify_code_verifier');
 
     return response;
 

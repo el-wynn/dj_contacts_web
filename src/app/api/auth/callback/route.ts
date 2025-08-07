@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const state = searchParams.get('state');
-  const expectedState = request.cookies.get('oauth_state')?.value;
+  const expectedState = request.cookies.get('soundcloud_oauth_state')?.value;
 
   // Verify state parameter matches expected value
   if (!state || !expectedState || state !== expectedState) {
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const codeVerifier = request.cookies.get('code_verifier')?.value;
+    const codeVerifier = request.cookies.get('soundcloud_code_verifier')?.value;
 
     const tokenResponse = await fetch('https://secure.soundcloud.com/oauth/token', {
       method: 'POST',
@@ -51,17 +51,21 @@ export async function GET(request: NextRequest) {
     const { access_token, refresh_token } = tokenData;
 
     const response = NextResponse.redirect(new URL('/', getBaseURL(request)));
-    response.cookies.delete('code_verifier');
+    response.cookies.delete('soundcloud_code_verifier');
 
     try {
-      response.cookies.set('accessToken', access_token, {
+      response.cookies.set({
+        name: 'soundcloud_access_token',
+        value: access_token,
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
         maxAge: 3600, // Token expires in 1 hour
       });
-      response.cookies.set('refreshToken', refresh_token, {
+      response.cookies.set({
+        name: 'soundcloud_refresh_token', 
+        value: refresh_token, 
         httpOnly: true,
         secure: true,
         sameSite: 'lax',

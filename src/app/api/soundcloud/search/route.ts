@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
             return rateLimitResponse;
         }
 
-        const accessToken = request.cookies.get('accessToken')?.value;
+        const accessToken = request.cookies.get('soundcloud_access_token')?.value;
 
         if (!accessToken) {
             console.error('No access token found. User is not authenticated.');
