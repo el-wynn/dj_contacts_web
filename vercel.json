@@ -33,8 +33,5 @@
         "source": "/api/soundcloud/(.*)",
         "destination": "/api/soundcloud/routes"
       }
-    ],
-    "waf": {
-      "rules": "./vercel-security.json"
-    }
+    ]
   }
