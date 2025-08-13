@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
   } */
 
   if (!state || !expectedState || state !== expectedState) {
-    console.error('State mismatch or missing : ' + state + " | " + expectedState);
+    console.error('State mismatch or missing : ');
     request.cookies.delete('spotify_oauth_state');
     return NextResponse.redirect(new URL('/?error=state_mismatch', baseURL));
   }
