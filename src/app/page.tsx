@@ -26,7 +26,7 @@ export default function Home() {
         const checkSoundCloudAuthStatus = async () => {
             // TODO : Loading state
             try {
-                const response = await fetch('/api/auth/status');
+                const response = await fetch('/api/soundcloud/auth/status');
                 if (response.ok) {
                     const data = await response.json();
                     setIsSoundCloudAuth(data.authenticated);
@@ -139,7 +139,7 @@ export default function Home() {
 
     const terminateSoundCloudAuth = async () => {
         try {
-            const response = await fetch('/api/auth/disconnect');
+            const response = await fetch('/api/soundcloud/auth/disconnect');
             if (response.ok) {
                 console.log('Successfully disconnected from SoundCloud.');
                 // Refresh the page or update the isAuthenticated state (client side) to reflect disconnection.
