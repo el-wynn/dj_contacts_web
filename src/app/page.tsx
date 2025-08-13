@@ -62,12 +62,13 @@ export default function Home() {
 
         // Periodically trigger the server-side refresh token endpoint
         // The server will handle the actual token expiry check and refresh logic
-        const accessTokenRefreshInterval = 360000; // Check every hour for testing
+        const accessTokenRefreshInterval = 60 * 60 * 1000; // Check every hour for testing
 
         const intervalId = setInterval(() => {
-             // Call the status endpoint, which will internally trigger refresh if needed
-             checkSoundCloudAuthStatus();
-         }, accessTokenRefreshInterval);
+            // Call the status endpoint, which will internally trigger refresh if needed
+            checkSoundCloudAuthStatus();
+            checkSpotifyAuthStatus();
+        }, accessTokenRefreshInterval);
 
 
         return () => clearInterval(intervalId); // Cleanup interval on component unmount
@@ -90,7 +91,7 @@ export default function Home() {
 
         // Set secure cookies for PKCE and state parameters
         const cookieOptions = process.env.NODE_ENV === 'production' ? 
-            `; path=/; secure; sameSite=lax; max-age=3600` : 
+            `; path=/; secure; htppOnly; sameSite=lax; max-age=3600` : 
             `; path=/; max-age=3600`;
 
         document.cookie = `soundcloud_code_verifier=${codeVerifier}${cookieOptions}`;
@@ -116,7 +117,7 @@ export default function Home() {
 
         // Set secure cookies for PKCE and state parameters
         const cookieOptions = process.env.NODE_ENV === 'production' ? 
-            `; path=/; secure; sameSite=lax; max-age=3600` : 
+            `; path=/; secure; httpOnly; sameSite=lax; max-age=3600` : 
             `; path=/; domain=127.0.0.1; max-age=3600`; 
         document.cookie = `spotify_code_verifier=${codeVerifier}${cookieOptions}`;
         document.cookie = `spotify_oauth_state=${state}${cookieOptions}`;

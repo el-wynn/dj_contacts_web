@@ -6,7 +6,7 @@ import { ContactInfo } from '@/lib/types';
 // Simple in-memory cache with 5 minute TTL
 // TODO : move cache to more robust memory
 const scrapeCache = new Map<string, {data: any, timestamp: number}>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 function getCachedResult(url: string) {
     const cached = scrapeCache.get(url);

@@ -4,21 +4,18 @@ export async function GET(request: NextRequest) {
     const accessToken = request.cookies.get('soundcloud_access_token')?.value;
     const refreshToken = request.cookies.get('soundcloud_refresh_token')?.value;
 
-    console.log('SC: Access token found:', accessToken ? 'Exists' : 'Does not exist');
-    console.log('SC: Refresh token found:', refreshToken ? 'Exists' : 'Does not exist');
+    //console.log('[SC] Access token found:', accessToken ? 'Exists' : 'Does not exist');
+    //console.log('[SC] Refresh token found:', refreshToken ? 'Exists' : 'Does not exist');
 
-
-    // In a real app, you'd validate access token expiry here.
-    // For simplicity, we'll assume if accessToken exists, it's valid for this check.
     // TODO : Validate access token expiry
     if (accessToken) {
-        console.log('SC: Access token exists. User is authenticated.');
+        console.log('[SC] Access token exists. User is authenticated.');
         return NextResponse.json({ authenticated: true });
     }
 
     // If no access token but refresh token exists, try to refresh
     if (refreshToken) {
-        console.log('No access token found, but refresh token exists. Attempting to refresh token with SoundCloud API directly.');
+        console.log('[SC] No access token found, but refresh token exists. Attempting to refresh token with SoundCloud API directly.');
         try {
              const requestBody = new URLSearchParams({
                 refresh_token: refreshToken,
@@ -29,7 +26,7 @@ export async function GET(request: NextRequest) {
                 // redirect_uri: process.env.NEXT_PUBLIC_SOUNDCLOUD_REDIRECT_URI || '',
             });
 
-            console.log('Request body for token refresh:', requestBody.toString());
+            //console.log('Request body for token refresh:', requestBody.toString());
 
             const tokenResponse = await fetch('https://secure.soundcloud.com/oauth/token', {
                 method: 'POST',
@@ -40,9 +37,9 @@ export async function GET(request: NextRequest) {
                 body: requestBody,
             });
 
-            console.log('SoundCloud API refresh response status:', tokenResponse.status);
-             const responseBody = await tokenResponse.text();
-             console.log('SoundCloud API refresh response body:', responseBody);
+            console.log('[SC] refresh response status:', tokenResponse.status);
+            const responseBody = await tokenResponse.text();
+            //console.log('SoundCloud API refresh response body:', responseBody);
 
 
             if (tokenResponse.ok) {
@@ -54,64 +51,63 @@ export async function GET(request: NextRequest) {
                 const response = NextResponse.json({ authenticated: true });
 
                 // Always set the new access token cookie
-                 response.cookies.set('soundcloud_access_token', accessToken, {
-                     httpOnly: true,
-                     secure: process.env.NODE_ENV === 'production',
-                     path: '/',
-                     maxAge: 3600, // Token expires in 1 hour
-                 });
+                response.cookies.set('soundcloud_access_token', accessToken, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    path: '/',
+                    maxAge: 3600, // Token expires in 1 hour
+                });
 
                 // **Explicitly update the refresh token cookie if a new one is provided**
-                 if (newRefreshToken) {
-                     console.log('New refresh token received. Updating refresh token cookie.');
-                     response.cookies.set('soundcloud_refresh_token', newRefreshToken, {
-                         httpOnly: true,
-                         secure: true,
-                         sameSite: 'lax',
-                         path: '/',
-                          // Set appropriate maxAge for refresh token (or leave as session)
-                          // maxAge: 3600 * 24 * 30, // Example: 30 days
-                     });
-                 } else {
-                     console.log('No new refresh token received. Keeping existing refresh token cookie.');
-                     // If no new refresh token is provided, the existing one might still be valid,
-                     // but in many implementations, it's a rolling window.
-                     // We'll keep the existing one for now if no new one is sent.
-                 }
+                if (newRefreshToken) {
+                    console.log('[SC] New refresh token received. Updating refresh token cookie.');
+                    response.cookies.set('soundcloud_refresh_token', newRefreshToken, {
+                        httpOnly: true,
+                        secure: true,
+                        sameSite: 'lax',
+                        path: '/',
+                        maxAge: 3600 * 24 * 30, // Example: 30 days
+                    });
+                } else {
+                    console.log('[SC] No new refresh token received. Keeping existing refresh token cookie.');
+                    // If no new refresh token is provided, the existing one might still be valid,
+                    // but in many implementations, it's a rolling window.
+                    // We'll keep the existing one for now if no new one is sent.
+                }
 
-                 return response;
+                return response;
 
             } else {
                 console.error('Failed to refresh token with SoundCloud API.');
-                 // Attempt to parse JSON error body if available
+                // Attempt to parse JSON error body if available
                 try {
                     const errorData = JSON.parse(responseBody);
-                     console.error('SoundCloud API error details:', errorData);
-                     // If refresh fails, the refresh token might be invalid/expired. Clear cookies.
-                     const errorResponse = NextResponse.json({ authenticated: false, error: 'Failed to refresh token', details: errorData }, { status: tokenResponse.status });
-                     errorResponse.cookies.delete('soundcloud_access_token');
-                     errorResponse.cookies.delete('soundcloud_refresh_token');
-                     return errorResponse;
+                    console.error('SoundCloud API error details:', errorData);
+                    // If refresh fails, the refresh token might be invalid/expired. Clear cookies.
+                    const errorResponse = NextResponse.json({ authenticated: false, error: 'Failed to refresh token', details: errorData }, { status: tokenResponse.status });
+                    errorResponse.cookies.delete('soundcloud_access_token');
+                    errorResponse.cookies.delete('soundcloud_refresh_token');
+                    return errorResponse;
                 } catch (error) {
-                     const errorResponse = NextResponse.json({ authenticated: false, error, details: responseBody }, { status: tokenResponse.status });
-                     errorResponse.cookies.delete('soundcloud_access_token');
-                     errorResponse.cookies.delete('soundcloud_refresh_token');
-                     return errorResponse;
+                    const errorResponse = NextResponse.json({ authenticated: false, error, details: responseBody }, { status: tokenResponse.status });
+                    errorResponse.cookies.delete('soundcloud_access_token');
+                    errorResponse.cookies.delete('soundcloud_refresh_token');
+                    return errorResponse;
                 }
             }
         } catch (error) {
             console.error('Error during token refresh process:', error);
-             const errorResponse = NextResponse.json({ authenticated: false, error, details: 'Error during refresh process' }, { status: 500 });
-             errorResponse.cookies.delete('soundcloud_access_token');
-             errorResponse.cookies.delete('soundcloud_refresh_token');
+            const errorResponse = NextResponse.json({ authenticated: false, error, details: 'Error during refresh process' }, { status: 500 });
+            errorResponse.cookies.delete('soundcloud_access_token');
+            errorResponse.cookies.delete('soundcloud_refresh_token');
             return errorResponse;
         }
     }
 
     // If neither token exists
-    console.log('SC: Neither access nor refresh token found. User is not authenticated.');
-     const response = NextResponse.json({ authenticated: false });
-     response.cookies.delete('soundcloud_access_token'); // Ensure no stale cookies remain
-     response.cookies.delete('soundcloud_refresh_token');
+    console.log('[SC] Neither access nor refresh token found. User is not authenticated.');
+    const response = NextResponse.json({ authenticated: false });
+    response.cookies.delete('soundcloud_access_token'); // Ensure no stale cookies remain
+    response.cookies.delete('soundcloud_refresh_token');
     return response;
 }
