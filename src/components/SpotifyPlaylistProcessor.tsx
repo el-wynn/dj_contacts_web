@@ -30,8 +30,8 @@ export default function SpotifyPlaylistProcessor() {
 			} else {
 				handleError(response.status);
 			}
-		} catch (error) {
-			handleError();
+		} catch  {
+			handleError(500);
 		} finally {
 			setIsLoading(false);
 		}
@@ -39,7 +39,7 @@ export default function SpotifyPlaylistProcessor() {
 
 	// Process selected playlist
 	const processPlaylist = async (playlistId: string) => {
-		setHasCopy(false);
+		setHasCopy(false)
 		setIsLoading(true);
 
 		try {
@@ -53,8 +53,8 @@ export default function SpotifyPlaylistProcessor() {
 			} else {
 				handleError(response.status);
 			}
-		} catch (error) {
-			handleError();
+		} catch {
+			handleError(500);
 		} finally {
 			setIsLoading(false);
 		}
@@ -68,6 +68,9 @@ export default function SpotifyPlaylistProcessor() {
 				break;
 			case 404:
 				errorMessage = "I couldn't find any tracks here.";
+				break;
+			case 500:
+				errorMessage = "Something went wrong with this playlist. Please try again.";
 				break;
 			default:
 				errorMessage = 'Something went wrong. Please try again.';

@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Verify state matches cookie
-  let expectedState = request.cookies.get('spotify_oauth_state')?.value;
+  const expectedState = request.cookies.get('spotify_oauth_state')?.value;
 
   // if not in cookies, use local statestore
   /* if (!savedState) {
