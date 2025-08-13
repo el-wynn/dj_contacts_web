@@ -117,7 +117,7 @@ export default function Home() {
 
         // Set secure cookies for PKCE and state parameters
         const cookieOptions = process.env.NODE_ENV === 'production' ? 
-            `; path=/; secure; httpOnly; sameSite=lax; max-age=3600` : 
+            `; path=/; domain=dj-contacts-web.vercel.app; secure; httpOnly; sameSite=lax; max-age=3600` : 
             `; path=/; domain=127.0.0.1; max-age=3600`; 
         document.cookie = `spotify_code_verifier=${codeVerifier}${cookieOptions}`;
         document.cookie = `spotify_oauth_state=${state}${cookieOptions}`;
@@ -321,7 +321,7 @@ export default function Home() {
                 ) : (
                     <button 
                         className="mt-2 bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                        onClick={initiateSpotifyAuth}
+                        onClick={initiateSoundCloudAuth}
                         style={{ cursor: 'pointer' }} 
                     >Connect to SoundCloud</button>
                 )}
