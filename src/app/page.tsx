@@ -5,6 +5,7 @@ import { generateCodeVerifier, generateCodeChallenge } from '@/lib/pkce';
 import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
 import { saveState } from '@/lib/statestore';
+import SpotifyPlaylistProcessor from '@/components/SpotifyPlaylistProcessor';
 
 
 export default function Home() {
@@ -349,6 +350,9 @@ export default function Home() {
             */}
 
             {/* Artist input form */}
+
+            <SpotifyPlaylistProcessor/>
+
             <div className="mb-4">
                 <label htmlFor="artist-input" className="block text-gray-700 text-sm font-bold mb-2">
                     Enter Artists (comma-separated):
