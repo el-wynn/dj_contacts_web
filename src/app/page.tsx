@@ -298,7 +298,10 @@ export default function Home() {
         <div className="container mx-auto p-4">
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', marginBottom: '20px' }}>
                 {isSpotifyAuth ? (
-                    <p>Connected to Spotify</p>
+                    <p
+                        className="text-gray-700"
+                        title="Disconnect from spotify will be available soon"
+                    >Connected to Spotify</p>
                 ) : (
                     <button 
                         className="mt-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
@@ -309,19 +312,18 @@ export default function Home() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', marginBottom: '20px' }}>
                 {isSoundCloudAuth ? (
-                    <img
-                        src="https://connect.soundcloud.com/2/btn-disconnect-l.png"
+                    <p
+                        className="text-gray-700"
                         onClick={terminateSoundCloudAuth}
                         style={{ cursor: 'pointer' }}
-                        alt="Disconnect from SoundCloud"
-                    ></img>
+                        title="Click to disconnect"
+                    >Connected to Soundcloud</p>
                 ) : (
-                    <img
-                        src="https://connect.soundcloud.com/2/btn-connect-sc-l.png"
-                        onClick={initiateSoundCloudAuth}
+                    <button 
+                        className="mt-2 bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        onClick={initiateSpotifyAuth}
                         style={{ cursor: 'pointer' }} 
-                        alt="Connect to SoundCloud"
-                    ></img>
+                    >Connect to SoundCloud</button>
                 )}
             </div>
 
@@ -352,7 +354,7 @@ export default function Home() {
 
             {/* Artist input form */}
 
-            <SpotifyPlaylistProcessor/>
+            {isSpotifyAuth ? <SpotifyPlaylistProcessor/> : ''}
 
             <div className="mb-4">
                 <label htmlFor="artist-input" className="block text-gray-700 text-sm font-bold mb-2">
