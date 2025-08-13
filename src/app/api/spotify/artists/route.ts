@@ -1,21 +1,20 @@
 // src/app/api/spotify/artists/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 
-export async function POST(request: NextRequest) {
-  const { playlistUrl } = await request.json();
-  
-  // Extract playlist ID from URL
-  const playlistId = extractSpotifyId(playlistUrl);
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+
+  const playlistId = searchParams.get('playlist')
   if (!playlistId) {
     return NextResponse.json(
-      { error: 'Invalid Spotify playlist URL' }, 
+      { error: 'Invalid Spotify playlist ID' }, 
       { status: 400 }
     );
   }
 
   // Get access token from cookies
-  const token = request.cookies.get('spotify_access_token')?.value;
-  if (!token) {
+  const accessToken = request.cookies.get('spotify_access_token')?.value;
+  if (!accessToken) {
     return NextResponse.json(
       { error: 'Not authenticated with Spotify' },
       { status: 401 }
@@ -24,9 +23,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // Fetch playlist
-    const tracks = await getPlaylistTracks(playlistId, token);
-
-    console.log(tracks);
+    const tracks = await getPlaylistTracks(playlistId, accessToken);
     
     if (!tracks?.items) {
       return NextResponse.json(
@@ -36,8 +33,15 @@ export async function POST(request: NextRequest) {
     }
 
     const artists = extractUniqueArtists(tracks);
+
+    if (!artists?.length) {
+      return NextResponse.json(
+        { error: 'No artists found in playlist' },
+        { status: 404 }
+      );
+    }
     
-    return NextResponse.json(artists);
+    return NextResponse.json({artists});
 
   } catch (error: any) {
     console.error('Playlist fetch error:', error);
@@ -49,11 +53,11 @@ export async function POST(request: NextRequest) {
 }
 
 // Helper functions
-function extractSpotifyId(url: string): string | null {
+/* function extractSpotifyId(url: string): string | null {
   const regex = /spotify:playlist:([a-zA-Z0-9]+)|open\.spotify\.com\/playlist\/([a-zA-Z0-9]+)/;
   const match = url.match(regex);
   return match?.[1] || match?.[2] || null;
-}
+} */
 
 async function getPlaylistTracks(playlistId: string, token: string) {
   const response = await fetch(

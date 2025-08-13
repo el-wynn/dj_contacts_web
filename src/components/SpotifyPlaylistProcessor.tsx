@@ -43,8 +43,10 @@ export default function SpotifyPlaylistProcessor() {
     setSelectedPlaylist(playlistId);
     
     try {
-      const response = await fetch(`/api/spotify/artists?id=${playlistId}`);
+      const response = await fetch(`/api/spotify/artists?playlist=${playlistId}`);
       const data = await response.json();
+
+      console.log(data);
       
       if (response.ok) {
         setArtists(data.artists.join(', '));
@@ -64,10 +66,10 @@ export default function SpotifyPlaylistProcessor() {
     let errorMessage = 'An error occurred';
     switch (status) {
       case 401: 
-        errorMessage = 'Please log in to Spotify first';
+        errorMessage = 'Please log in to Spotify first.';
         break;
       case 404:
-        errorMessage = 'No playlists found or unable to process';
+        errorMessage = "I couldn't find any tracks here.";
         break;
       default:
         errorMessage = 'Something went wrong. Please try again.';
@@ -140,7 +142,7 @@ export default function SpotifyPlaylistProcessor() {
               />
               <button
                 onClick={() => navigator.clipboard.writeText(artists)}
-                className="px-4 py-2 bg-gray-100 border rounded hover:bg-gray-200"
+                className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
               >
                 Copy to Clipboard
               </button>
