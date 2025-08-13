@@ -17,7 +17,7 @@ const rateLimits = new Map<
 
 const WINDOW_SIZE_MS = 60 * 1000; // 1 minute window
 const DAILY_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
-const MAX_REQUESTS_PER_MINUTE = 5;
+const MAX_REQUESTS_PER_MINUTE = 20;
 const MAX_REQUESTS_PER_DAY = 20;
 
 export async function rateLimiter(

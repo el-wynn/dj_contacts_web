@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { rateLimiter } from '@/lib/ratelimit';
+import { rateLimiter } from '@/lib/rateLimit';
 import { extractEmails, extractTstackLinks, extractSoundCloundLinks, scrapeWebsite } from '@/lib/scraper';
 import { ContactInfo } from '@/lib/types';
 
