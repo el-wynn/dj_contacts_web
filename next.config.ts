@@ -7,10 +7,10 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Required for Next.js
       "style-src 'self' 'unsafe-inline'", // Required for CSS-in-JS
-      "img-src 'self' data: https://*.soundcloud.com https://connect.soundcloud.com",
+      "img-src 'self' data: blob https://*.soundcloud.com https://connect.soundcloud.com https://*.scdn.co https://platform-lookaside.fbsbx.com https://*.spotifycdn.com",
       "font-src 'self'",
       "frame-src 'self' https://soundcloud.com",
-      "connect-src 'self' https://api.soundcloud.com",
+      "connect-src 'self' https://api.soundcloud.com https://accounts.spotify.com https://api.spotify.com",
       "media-src 'self' https://*.soundcloud.com",
       "form-action 'self'"
     ].join('; ')

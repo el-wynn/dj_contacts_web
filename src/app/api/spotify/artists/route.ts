@@ -1,4 +1,4 @@
-// src/app/api/spotify/playlist/route.ts
+// src/app/api/spotify/artists/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 
 export async function POST(request: NextRequest) {
@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Fetch playlist with rate limit tracking
-    const { data: tracks, rateLimit } = await getPlaylistTracks(playlistId, token);
+    // Fetch playlist
+    const tracks = await getPlaylistTracks(playlistId, token);
 
     console.log(tracks);
     
@@ -37,18 +37,7 @@ export async function POST(request: NextRequest) {
 
     const artists = extractUniqueArtists(tracks);
     
-    const response = NextResponse.json({ 
-      artists,
-      rateLimit // Forward rate limit info
-    });
-    
-    // Set rate limit headers for client-side tracking
-    if (rateLimit) {
-      response.headers.set('X-RateLimit-Remaining', rateLimit.remaining.toString());
-      response.headers.set('X-RateLimit-Reset', rateLimit.reset.toString());
-    }
-    
-    return response;
+    return NextResponse.json(artists);
 
   } catch (error: any) {
     console.error('Playlist fetch error:', error);
@@ -81,13 +70,6 @@ async function getPlaylistTracks(playlistId: string, token: string) {
     throw error;
   }
 
-  // Extract rate limit headers
-  const rateLimit = {
-    remaining: parseInt(response.headers.get('X-RateLimit-Remaining') || '-1'),
-    limit: parseInt(response.headers.get('X-RateLimit-Limit') || '-1'),
-    reset: parseInt(response.headers.get('X-RateLimit-Reset') || '0')
-  };
-
   const data = await response.json();
   
   // Handle empty or malformed response
@@ -95,7 +77,7 @@ async function getPlaylistTracks(playlistId: string, token: string) {
     throw new Error('Invalid Spotify response format');
   }
 
-  return { data, rateLimit };
+  return data;
 }
 
 function extractUniqueArtists(tracks: any): string[] {
