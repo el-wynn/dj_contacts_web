@@ -117,7 +117,7 @@ export default function Home() {
 
         // Set secure cookies for PKCE and state parameters
         const cookieOptions = process.env.NODE_ENV === 'production' ? 
-            `; path=/; secure; httpOnly; sameSite=lax; max-age=3600` : 
+            `; path=/; domain=dj-contacts-web.vercel.app; secure; httpOnly; sameSite=lax; max-age=3600` : 
             `; path=/; domain=127.0.0.1; max-age=3600`; 
         document.cookie = `spotify_code_verifier=${codeVerifier}${cookieOptions}`;
         document.cookie = `spotify_oauth_state=${state}${cookieOptions}`;
