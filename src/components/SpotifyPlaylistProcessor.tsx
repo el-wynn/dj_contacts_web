@@ -63,6 +63,9 @@ export default function SpotifyPlaylistProcessor() {
 	const handleError = (status?: number) => {
 		let errorMessage = 'An error occurred';
 		switch (status) {
+			case 400:
+				errorMessage = 'Something went wrong on Spotify side. Please try again later.';
+				break;
 			case 401:
 				errorMessage = 'Please log in to Spotify first.';
 				break;

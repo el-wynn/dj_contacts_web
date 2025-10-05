@@ -69,8 +69,9 @@ async function getPlaylistTracks(playlistId: string, token: string) {
 
   if (!response.ok) {
     const errorData = await response.json();
-    const error = new Error(errorData?.error?.message || 'Spotify API error');
-    (error as any).status = response.status;
+    const errorMessage = 'Spotify API error' + (" : " + errorData?.error?.message || '.')
+    const error = new Error();
+    (error as any).status = response.status || 400;
     throw error;
   }
 
@@ -78,7 +79,9 @@ async function getPlaylistTracks(playlistId: string, token: string) {
   
   // Handle empty or malformed response
   if (!data || typeof data !== 'object') {
-    throw new Error('Invalid Spotify response format');
+    const error = new Error('Invalid Spotify response format');
+    (error as any).status = 400;
+    throw error;
   }
 
   return data;
