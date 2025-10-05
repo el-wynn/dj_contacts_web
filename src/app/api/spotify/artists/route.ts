@@ -69,9 +69,8 @@ async function getPlaylistTracks(playlistId: string, token: string) {
 
   if (!response.ok) {
     const errorData = await response.json();
-    const error = new Error();
+    const error = new Error('Spotify API error' + (" : " + errorData?.error?.message || '.'));
     (error as any).status = response.status || 400;
-    (error as any).message = 'Spotify API error' + (" : " + errorData?.error?.message || '.')
     throw error;
   }
 
