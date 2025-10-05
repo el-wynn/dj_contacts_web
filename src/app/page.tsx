@@ -153,6 +153,21 @@ export default function Home() {
         }
     };
 
+    const terminateSpotifyAuth = async () => {
+        try {
+            const response = await fetch('/api/spotify/auth/disconnect');
+            if (response.ok) {
+                console.log('Successfully disconnected from Spotify.');
+                // Refresh the page or update the isAuthenticated state (client side) to reflect disconnection.
+                setIsSpotifyAuth(false);
+            } else {
+                console.error('Failed to disconnect from Spotify');
+            }
+        } catch (error) {
+            console.error('Error calling disconnect endpoint : ' + error);
+        }
+    };
+
     /*
     const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -300,7 +315,9 @@ export default function Home() {
                 {isSpotifyAuth ? (
                     <p
                         className="text-gray-700"
-                        title="Disconnect from spotify will be available soon"
+                        onClick={terminateSpotifyAuth}
+                        style={{ cursor: 'pointer' }}
+                        title="Click to disconnect"
                     >Connected to Spotify</p>
                 ) : (
                     <button 
