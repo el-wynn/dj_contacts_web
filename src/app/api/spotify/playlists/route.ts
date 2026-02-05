@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!playlistsResponse.ok) {
-      throw new Error(`Spotify API error: ${playlistsResponse.status}`);
+      throw new Error(`From Spotify API : ${playlistsResponse.json()}`);
     }
 
     const data = await playlistsResponse.json();
