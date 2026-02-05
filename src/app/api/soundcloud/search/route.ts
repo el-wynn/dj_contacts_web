@@ -107,8 +107,7 @@ export async function GET(request: NextRequest) {
 
         // 4. Extract contact information
         const website = firstUser.website && !blacklistedWebsite.test(firstUser.website) ? firstUser.website : '';
-        const instagramUsername = webProfiles.find(profile => profile?.url && profile?.service?.includes('instagram'))?.username || '';
-        const instagram = instagramUsername ? `https://instagram.com/${instagramUsername}` : '';
+        const instagram = webProfiles.find(profile => profile?.url && profile?.service?.includes('instagram'))?.username || '';
         const tstack = extractTstackLinks(userDescription);
         const demoEmail = extractEmails(userDescription).join('; ');
         const soundcloudLink = extractSoundCloundLinks(firstUser.permalink_url);

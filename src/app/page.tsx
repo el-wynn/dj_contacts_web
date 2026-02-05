@@ -6,6 +6,7 @@ import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
 import { saveState } from '@/lib/statestore';
 import SpotifyPlaylistProcessor from '@/components/SpotifyPlaylistProcessor';
+import { SortableTable } from '@/components/SortableTable';
 
 
 export default function Home() {
@@ -400,105 +401,75 @@ export default function Home() {
 
             {/* Results table */}
             {hasSearched && (
-                <div>
-                    <h2 className="text-xl font-semibold mb-2">Search Results</h2>
-                    <table className="table-auto w-full">
-                        <thead>
-                            <tr>
-                                <th className="px-4 py-2">DJ Name</th>
-                                <th className="px-4 py-2">Website (not exported)</th>
-                                <th className="px-4 py-2">Instagram</th>
-                                <th className="px-4 py-2">Promo/Demo Email</th>
-                                <th className="px-4 py-2">SoundCloud</th>
-                                <th className="px-4 py-2">TrackStack</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {searchResults.map((result: any, index: number) => (
-                                result ? (
-                                    <tr key={index}>
-                                        <td className="border px-4 py-2 font-semibold">
-                                            {sanitize(result.djName)}
-                                        </td>
-                                        <td className="border px-4 py-2">
-                                            {result.website ? (
-                                                <a 
-                                                    href={sanitize(result.website)} 
-                                                    target="_blank" 
-                                                    rel="noopener noreferrer" 
-                                                    className="text-blue-500"
-                                                >
-                                                    Website
-                                                </a>
-                                            ) : null}
-                                        </td>
-                                        <td className="border px-4 py-2">
-                                            {result.instagram ? (
-                                                <a 
-                                                    href={sanitize(result.instagram)} 
-                                                    target="_blank" 
-                                                    rel="noopener noreferrer" 
-                                                    className="text-blue-500"
-                                                >
-                                                    {sanitize(result.instagram)}
-                                                </a>
-                                            ) : null}
-                                        </td>
-                                        <td className="border px-4 py-2">
-                                            {sanitize(result.demoEmail)}
-                                        </td>
-                                        <td className="border px-4 py-2">
-                                            {result.soundCloud ? (
-                                                <a 
-                                                    href={sanitize(result.soundCloud)} 
-                                                    target="_blank" 
-                                                    rel="noopener noreferrer" 
-                                                    className="text-blue-500"
-                                                >
-                                                    {sanitize(result.soundCloud)}
-                                                </a>
-                                            ) : null}
-                                        </td>
-                                        <td className="border px-4 py-2">
-                                            {result.tstack ? (
-                                                <a 
-                                                    href={sanitize(result.tstack)} 
-                                                    target="_blank" 
-                                                    rel="noopener noreferrer" 
-                                                    className="text-blue-500"
-                                                >
-                                                    {sanitize(result.tstack)}
-                                                    </a>
-                                            ) : null}
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    <tr key={`empty-${index}`}>
-                                        <td colSpan={6} className="border px-4 py-2 text-center text-gray-500">
-                                            Invalid result data
-                                        </td>
-                                    </tr>
-                                )
-                            ))}
-                        </tbody>
-                    </table>
-                    <button
-                        className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                        onClick={handleExportCSV}
-                    >
-                        Export CSV
-                    </button>
-                </div>
+                <SortableTable 
+                data={searchResults}
+                columns={[
+                  {
+                    key: 'djName',
+                    label: 'DJ Name',
+                    sortable: true
+                  },
+                  {
+                    key: 'website',
+                    label: 'Website (not exported)',
+                    sortable: false,
+                    render: (value) => value ? (
+                      <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                        {value}
+                      </a>
+                    ) : ''
+                  },
+                  {
+                    key: 'instagram',
+                    label: 'Instagram',
+                    sortable: true,
+                    render: (value) => value ? (
+                      <a href={`https://instagram.com/${value.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                        @{value.replace('@', '')}
+                      </a>
+                    ) : ''
+                  },
+                  {
+                    key: 'demoEmail',
+                    label: 'Promo/Demo Email',
+                    sortable: true,
+                    render: (value) => value || ''
+                  },
+                  {
+                    key: 'soundCloud',
+                    label: 'SoundCloud',
+                    sortable: true,
+                    render: (value) => value ? (
+                      <a href={value} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:underline">
+                        Profile
+                      </a>
+                    ) : ''
+                  },
+                  {
+                    key: 'tstack',
+                    label: 'TrackStack',
+                    sortable: true,
+                    render: (value) => value ? (
+                      <a href={value} target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline">
+                        Link
+                      </a>
+                    ) : ''
+                  }
+                ]}
+              />
+            ) && (
+                <button
+                    className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    onClick={handleExportCSV}
+                >
+                    Export CSV
+                </button>
             )}
             {/* Not Found Artists */}
             {notFoundArtists.length > 0 && (
-                <div className="mt-4">
-                    <h3 className="text-lg font-semibold text-orange-600">Artists Not Found:</h3>
-                    <ul className="list-disc list-inside text--600">
-                        {notFoundArtists.map((artist, index) => (
-                            <li key={index}>{artist}</li>
-                        ))}
-                    </ul>
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                    <h3 className="font-medium text-yellow-800">Not found:</h3>
+                    <p className="text-yellow-700">{notFoundArtists.join(', ')}</p>
                 </div>
             )}
             {/* Searching Overlay */}
