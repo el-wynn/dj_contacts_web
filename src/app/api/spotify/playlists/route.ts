@@ -30,7 +30,25 @@ export async function GET(request: NextRequest) {
     });
 
     if (!playlistsResponse.ok) {
-      throw new Error(`From Spotify API : ${playlistsResponse.json()}`);
+      // Parse Spotify's error response
+      const errorResponse = await playlistsResponse.json().catch(() => null);
+      const errorMessage = errorResponse?.error?.message || playlistsResponse.statusText;
+      const errorStatus = playlistsResponse.status;
+      
+      console.error('Spotify API Error:', {
+        status: errorStatus,
+        message: errorMessage,
+        url: playlistsResponse.url
+      });
+      
+      return NextResponse.json(
+        { 
+          error: 'Spotify API Error',
+          message: errorMessage,
+          status: errorStatus 
+        },
+        { status: errorStatus } // Forward Spotify's status code
+      );
     }
 
     const data = await playlistsResponse.json();
