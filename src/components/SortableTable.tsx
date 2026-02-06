@@ -15,12 +15,16 @@ interface SortableTableProps<T> {
   data: T[];
   columns: Column<T>[];
   onRowDelete?: (row: T) => void;
+  loading?: boolean;
+  skeletonRowCount?: number;
 }
 
 export function SortableTable<T extends Record<string, any>>({
   data,
   columns,
   onRowDelete,
+  loading = false,
+  skeletonRowCount = 4,
 }: SortableTableProps<T>) {
   const [sortKey, setSortKey] = useState<keyof T | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
@@ -53,6 +57,41 @@ export function SortableTable<T extends Record<string, any>>({
       return sortDirection === 'asc' ? comparison : -comparison;
     });
   }, [data, sortKey, sortDirection]);
+
+  if (loading) {
+    return (
+      <div className="table-container animate-pulse">
+        <table className="sortable-table">
+          <thead>
+            <tr>
+              {columns.map((column, i) => (
+                <th key={i} className={column.sortable !== false ? 'sortable' : ''}>
+                  <div className="h-5 bg-gray-200 rounded" />
+                </th>
+              ))}
+              {onRowDelete && <th />}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: skeletonRowCount }).map((_, idx) => (
+              <tr key={idx}>
+                {columns.map((column, i) => (
+                  <td key={i}>
+                    <div className="h-4 bg-gray-100 rounded" />
+                  </td>
+                ))}
+                {onRowDelete && (
+                  <td>
+                    <div className="h-4 bg-gray-100 rounded w-8 mx-auto" />
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
 
   return (
     <div className="table-container">
