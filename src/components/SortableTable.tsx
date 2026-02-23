@@ -216,7 +216,7 @@ export function SortableTable<T extends Record<string, any>>({
         td {
           padding: 14px 16px;
           color: #495057;
-          font-size: 13px;
+          font-size: 16px;
         }
 
         .delete-btn {
