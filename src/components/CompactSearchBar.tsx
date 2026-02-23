@@ -1,25 +1,31 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { FormEvent, ChangeEvent } from 'react';
 
 interface CompactSearchBarProps {
   label?: string;
   placeholder?: string;
-  onSearch: (query: string) => void;
-  defaultValue?: string;
+  onChange: (value: string) => void;
+  onSearch: () => void;
+  query: string;
 }
 
 export function CompactSearchBar({
   label = 'Enter Artists (comma-separated):',
   placeholder = 'e.g., Disclosure, Gorgon City, MK, Jboi',
+  onChange,
   onSearch,
-  defaultValue = '',
+  query,
 }: CompactSearchBarProps) {
-  const [query, setQuery] = useState(defaultValue);
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const cleanValue = e.target.value.replace(/[^a-zA-Z0-9\s,\-_]/g, '');
+    onChange(cleanValue);
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    onSearch(query);
+    onSearch();
   };
 
   return (
@@ -31,7 +37,7 @@ export function CompactSearchBar({
           <input
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={handleInputChange}
             placeholder={placeholder}
             className="search-input"
           />
@@ -108,8 +114,6 @@ export function CompactSearchBar({
           font-size: 14px;
           color: #212529;
           outline: none;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-            'Helvetica Neue', Arial, sans-serif;
         }
 
         .search-input::placeholder {
@@ -120,7 +124,7 @@ export function CompactSearchBar({
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 12px 16px;
+          padding: 15px 16px;
           border: none;
           background: #495057;
           color: #ffffff;

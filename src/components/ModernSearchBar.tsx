@@ -1,46 +1,54 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { FormEvent, KeyboardEvent, ChangeEvent } from 'react';
 
 interface ModernSearchBarProps {
   placeholder?: string;
-  onSearch: (query: string) => void;
-  defaultValue?: string;
+  onChange: (value: string) => void;
+  onSearch: () => void;
+  query: string;
 }
 
 export function ModernSearchBar({
-  placeholder = 'Enter Artists (comma-separated)',
+  placeholder = 'Enter Artists (comma-separated), e.g., Disclosure, Gorgon City, MK, Jboi',
+  onChange,
   onSearch,
-  defaultValue = '',
+  query,
 }: ModernSearchBarProps) {
-  const [query, setQuery] = useState(defaultValue);
+
+  const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    const cleanValue = e.target.value.replace(/[^a-zA-Z0-9\s,\-_]/g, '');
+    onChange(cleanValue);
+  };
+
+  const handleEnter = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Submit on Enter (without Shift)
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  }
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    onSearch(query);
+    onSearch();
   };
 
   const handleClear = () => {
-    setQuery('');
+    onChange('');
   };
 
   return (
-    <div className="search-container">
+    <div className="search-container mb-5">
       <form onSubmit={handleSubmit} className="search-form">
         <div className="search-input-wrapper">
           <textarea
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={handleInputChange}
             placeholder={placeholder}
             className="search-input"
             rows={3}
-            onKeyDown={(e) => {
-              // Submit on Enter (without Shift)
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit(e);
-              }
-            }}
+            onKeyDown={handleEnter}
           />
           
           <div className="button-group">

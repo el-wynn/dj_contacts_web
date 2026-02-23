@@ -6,6 +6,7 @@ import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
 import { saveState } from '@/lib/statestore';
 import SpotifyPlaylistProcessor from '@/components/SpotifyPlaylistProcessor';
+import { ModernSearchBar } from '@/components/ModernSearchBar'
 import { SortableTable } from '@/components/SortableTable';
 
 
@@ -210,10 +211,6 @@ export default function Home() {
             //.substring(0, 100);
     };
 
-    const handleEnter = (e: { key: string; }) => {
-        if (e.key === 'Enter') handleSearch();
-    }
-
     const handleSearch = async () => {
         const sanitizedQuery = sanitizeArtistInput(searchQuery);
         const artistList = sanitizedQuery.split(',')
@@ -371,32 +368,8 @@ export default function Home() {
             */}
 
             {/* Artist input form */}
-
-            {isSpotifyAuth ? <SpotifyPlaylistProcessor/> : ''}
-
-            <div className="mb-4">
-                <label htmlFor="artist-input" className="block text-gray-700 text-sm font-bold mb-2">
-                    Enter Artists (comma-separated):
-                </label>
-                <input
-                    type="text"
-                    id="artist-input"
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    placeholder="e.g., Disclosure, Gorgon City, MK, JBoi"
-                    value={searchQuery}
-                    onChange={(e) => {
-                        const cleanValue = e.target.value
-                            .replace(/[^a-zA-Z0-9\s,\-_]/g, '');
-                        setSearchQuery(cleanValue);
-                    }}
-                    maxLength={500}
-                    onKeyUp={handleEnter}
-                />
-                <button className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                  onClick={handleSearch}
-                >
-                    Search
-                </button>
+          <div className="search-section">
+            {<ModernSearchBar onSearch={handleSearch} onChange={setSearchQuery} query={searchQuery} />}
             </div>
 
             {/* Results table */}
