@@ -8,6 +8,7 @@ import { saveState } from '@/lib/statestore';
 import SpotifyPlaylistProcessor from '@/components/SpotifyPlaylistProcessor';
 import { ModernSearchBar } from '@/components/ModernSearchBar'
 import { SortableTable } from '@/components/SortableTable';
+import { FullPageLoader } from '@/components/FullPageLoader';
 
 
 export default function Home() {
@@ -19,6 +20,8 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]); // Replace 'any' with a proper type
   const [sidebarOpen, setSidebarOpen] = useState(false);
+const [isSoundCloudLoading, setIsSoundCloudLoading] = useState<boolean>(true)
+  const [isSpotifyLoading, setIsSpotifyLoading] = useState<boolean>(true)
   //const [csvFile, setCsvFile] = useState<File | null>(null);
   //const [csvError, setCsvError] = useState<string | null>(null);
   const [notFoundArtists, setNotFoundArtists] = useState<string[]>([]);
@@ -27,7 +30,7 @@ export default function Home() {
   useEffect(() => {
     // Function to check authentication status using the server-side endpoint
     const checkSoundCloudAuthStatus = async () => {
-      // TODO : Loading state
+      setIsSoundCloudLoading(true);
       try {
         const response = await fetch('/api/soundcloud/auth/status');
         if (response.ok) {
@@ -39,6 +42,8 @@ export default function Home() {
       } catch (error) {
         console.error('Error checking SoundCloud auth status : ' + error);
         setIsSoundCloudAuth(false);
+} finally {
+        setIsSoundCloudLoading(false);
       }
     };
 
@@ -46,7 +51,7 @@ export default function Home() {
     checkSoundCloudAuthStatus();
 
     const checkSpotifyAuthStatus = async () => {
-      // TODO : Loading state
+      setIsSpotifyLoading(true);
       try {
         const response = await fetch('/api/spotify/auth/status');
         if (response.ok) {
@@ -58,6 +63,8 @@ export default function Home() {
       } catch (error) {
         console.error('Error checking Spotify auth status : ' + error);
         setIsSpotifyAuth(false);
+} finally {
+        setIsSpotifyLoading(false);
       }
     };
 
@@ -308,8 +315,11 @@ export default function Home() {
     downloadCSV(csvData);
   };
 
+  //if (isSoundCloudLoading) return <FullPageLoader isLoading = {isSoundCloudLoading}/>;
+
   return (
     <div className="flex min-h-screen bg-gray-50">
+<FullPageLoader isLoading = {isSoundCloudLoading && isSpotifyLoading}/>
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center px-4 gap-4 z-50">
         <button 
