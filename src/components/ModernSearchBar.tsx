@@ -111,11 +111,13 @@ export function ModernSearchBar({
       <style jsx>{`
         .search-container {
           width: 100%;
-          max-width: 900px;
+          display: flex;
+          justify-content: center;
         }
 
         .search-form {
           width: 100%;
+          max-width: 900px;
         }
 
         .search-input-wrapper {
@@ -125,7 +127,7 @@ export function ModernSearchBar({
           border: 1px solid #dee2e6;
           border-radius: 12px;
           transition: all 0.2s ease;
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .search-input-wrapper:focus-within {

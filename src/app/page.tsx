@@ -20,7 +20,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]); // Replace 'any' with a proper type
   const [sidebarOpen, setSidebarOpen] = useState(false);
-const [isSoundCloudLoading, setIsSoundCloudLoading] = useState<boolean>(true)
+  const [isSoundCloudLoading, setIsSoundCloudLoading] = useState<boolean>(true)
   const [isSpotifyLoading, setIsSpotifyLoading] = useState<boolean>(true)
   //const [csvFile, setCsvFile] = useState<File | null>(null);
   //const [csvError, setCsvError] = useState<string | null>(null);
@@ -42,7 +42,7 @@ const [isSoundCloudLoading, setIsSoundCloudLoading] = useState<boolean>(true)
       } catch (error) {
         console.error('Error checking SoundCloud auth status : ' + error);
         setIsSoundCloudAuth(false);
-} finally {
+      } finally {
         setIsSoundCloudLoading(false);
       }
     };
@@ -63,7 +63,7 @@ const [isSoundCloudLoading, setIsSoundCloudLoading] = useState<boolean>(true)
       } catch (error) {
         console.error('Error checking Spotify auth status : ' + error);
         setIsSpotifyAuth(false);
-} finally {
+      } finally {
         setIsSpotifyLoading(false);
       }
     };
@@ -319,7 +319,7 @@ const [isSoundCloudLoading, setIsSoundCloudLoading] = useState<boolean>(true)
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-<FullPageLoader isLoading = {isSoundCloudLoading && isSpotifyLoading}/>
+      <FullPageLoader isLoading = {isSoundCloudLoading && isSpotifyLoading}/>
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center px-4 gap-4 z-50">
         <button 
@@ -397,7 +397,7 @@ const [isSoundCloudLoading, setIsSoundCloudLoading] = useState<boolean>(true)
 
       {/* Main Content */}
       <main className="flex-1 lg:ml-96 min-h-screen pt-16 lg:pt-0">
-        <div className="max-w-6xl mx-auto px-4 lg:px-10 py-6 lg:py-12">
+        <div className="max-w-7xl mx-auto px-4 lg:px-10 py-6 lg:py-12">
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', marginBottom: '20px' }}>
             {isSoundCloudAuth ? (
               <div 
@@ -514,8 +514,8 @@ const [isSoundCloudLoading, setIsSoundCloudLoading] = useState<boolean>(true)
               {/* Not Found Artists */}
               {notFoundArtists.length > 0 && (
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg shadow-sm">
-                  <h3 className="font-medium text-yellow-800">Not found:</h3>
-                  <p className="text-yellow-700">{notFoundArtists.join(', ')}</p>
+                  <h3 className="font-medium text-yellow-800">I couldn't find these artists :</h3>
+                  <p className="text-yellow-700 font-semibold">{notFoundArtists.join(', ')}</p>
                 </div>
               )}
             </div>
@@ -526,7 +526,7 @@ const [isSoundCloudLoading, setIsSoundCloudLoading] = useState<boolean>(true)
             <div className="bg-white rounded-2xl p-12 lg:p-20 shadow-sm text-center">
               <div className="text-5xl mb-4 opacity-50">🔍</div>
               <p className="text-lg font-medium text-gray-700 mb-2">
-                No results found
+                I couldn't find any of them
               </p>
               <p className="text-sm text-gray-400">
                 Try searching for different artists
