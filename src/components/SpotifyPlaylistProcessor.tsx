@@ -106,6 +106,8 @@ export default function SpotifyPlaylistProcessor({ onChange } : SpotifyPlaylistP
 				>
 					{isLoading ? 'Loading...' : 'Show playlists'}
 				</button>
+					{isLoading && (<div className={`animate-spin rounded-full h-16 w-16 border-b-2 border-green-500 mx-auto my-4`}></div>)}
+				</div>
 			)}
 
 			{stage === 'playlists' && (

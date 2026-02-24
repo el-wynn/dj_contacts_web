@@ -547,9 +547,11 @@ const [isSoundCloudLoading, setIsSoundCloudLoading] = useState<boolean>(true)
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
+              flexDirection: 'column',
               zIndex: 1000,
               cursor: 'wait', // Change cursor to wait
             }}>
+              <div className={`animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto mb-4`}></div>
               <div className="animate-pulse text-white text-2xl">Searching for {currentArtist}...</div>
             </div>
           )}
