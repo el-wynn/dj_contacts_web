@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { ContactInfo } from '@/lib/types';
 import { generateCodeVerifier, generateCodeChallenge } from '@/lib/pkce';
 import Papa from 'papaparse';
-import DOMPurify from 'dompurify';
 import { saveState } from '@/lib/statestore';
 import SpotifyPlaylistProcessor from '@/components/SpotifyPlaylistProcessor';
 import { ModernSearchBar } from '@/components/ModernSearchBar'

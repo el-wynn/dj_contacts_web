@@ -92,9 +92,9 @@ export default function SpotifyPlaylistProcessor({ onChange } : SpotifyPlaylistP
 		setHasCopy(true);
 	}
 
-	/* const handleQuery = () => {
+	const handleQuery = () => {
 		onChange(artists)
-	} */
+	}
 
 	return (
 		<div className="space-y-4 max-w-md mx-auto">
@@ -162,10 +162,11 @@ export default function SpotifyPlaylistProcessor({ onChange } : SpotifyPlaylistP
 							<textarea
 								value={artists}
 								readOnly
-								className="font-semibold w-full p-2 rounded-lg min-h-24 resize-none focus:outline-none focus:shadow-outline"
+								className="font-semibold text-gray-700 w-full p-2 rounded-lg min-h-24 resize-none focus:outline-none focus:shadow-outline"
 							/>
 							<button
-								onClick={handleCopy}
+								onClick={!hasCopy ? handleCopy : handleQuery}
+								title={!hasCopy ? "Click to copy to clipboard" : "Click to paste and replace Search"}
 								className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-all duration-300 ease-in-out"
 							>
 								{hasCopy ? 'Copied !' : 'Copy to Clipboard'}
