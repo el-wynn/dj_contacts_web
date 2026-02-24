@@ -262,14 +262,14 @@ export default function Home() {
   };
 
   // Sanitize API output using DOMPurify
-  const sanitize = (dirty: string): string => {
+  /* const sanitize = (dirty: string): string => {
     try {
       return DOMPurify.sanitize(dirty || '');
     } catch (error) {
       console.error(error);
       return "";
     }
-  }
+  } */
 
   const generateCSV = (data: ContactInfo[]): string => {
     // Define the headers explicitly to ensure correct order and inclusion
@@ -514,7 +514,7 @@ export default function Home() {
               {/* Not Found Artists */}
               {notFoundArtists.length > 0 && (
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg shadow-sm">
-                  <h3 className="font-medium text-yellow-800">I couldn't find these artists :</h3>
+                  <h3 className="font-medium text-yellow-800">I could not find these artists :</h3>
                   <p className="text-yellow-700 font-semibold">{notFoundArtists.join(', ')}</p>
                 </div>
               )}
@@ -526,7 +526,7 @@ export default function Home() {
             <div className="bg-white rounded-2xl p-12 lg:p-20 shadow-sm text-center">
               <div className="text-5xl mb-4 opacity-50">🔍</div>
               <p className="text-lg font-medium text-gray-700 mb-2">
-                I couldn't find any of them
+                I could not find any of them
               </p>
               <p className="text-sm text-gray-400">
                 Try searching for different artists

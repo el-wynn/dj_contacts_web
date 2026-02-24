@@ -92,9 +92,9 @@ export default function SpotifyPlaylistProcessor({ onChange } : SpotifyPlaylistP
 		setHasCopy(true);
 	}
 
-	const handleQuery = () => {
+	/* const handleQuery = () => {
 		onChange(artists)
-	}
+	} */
 
 	return (
 		<div className="space-y-4 max-w-md mx-auto">
