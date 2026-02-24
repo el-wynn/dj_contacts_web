@@ -18,6 +18,7 @@ export default function Home() {
   const [hasSearched, setHasSerached] = useState<boolean>(false); // State to display table when search is done
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]); // Replace 'any' with a proper type
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   //const [csvFile, setCsvFile] = useState<File | null>(null);
   //const [csvError, setCsvError] = useState<string | null>(null);
   const [notFoundArtists, setNotFoundArtists] = useState<string[]>([]);
@@ -308,23 +309,66 @@ export default function Home() {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      {/* Left Sidebar */}
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h1 className="app-title">DJ Contact Researcher</h1>
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Mobile Header */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center px-4 gap-4 z-50">
+        <button 
+          className="p-2 text-gray-600 hover:text-gray-900"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label="Toggle menu"
+        >
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <h1 className="text-lg font-bold text-gray-900">
+          DJ Contact Researcher
+        </h1>
+      </header>
+
+      {/* Sidebar Overlay (mobile) */}
+      {sidebarOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      {/* Sidebar */}
+      <aside className={`
+        fixed left-0 top-0 bottom-0 w-80 lg:w-96 bg-white border-r border-gray-200 
+        flex flex-col overflow-y-auto z-50 transition-transform duration-300
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        {/* Sidebar Header */}
+        <div className="px-6 py-8 border-b border-gray-100 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">
+            DJ Contact Researcher
+          </h1>
+          <button
+            className="lg:hidden p-2 text-gray-600 hover:text-gray-900"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close sidebar"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        <div className="sidebar-content">
+        {/* Sidebar Content */}
+        <div className="flex-1 p-6 overflow-y-auto">
           {/* Spotify Connection Status */}
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', marginBottom: '20px' }}>
             {isSpotifyAuth ? (
-              <p
-                className="text-gray-700"
+              <div 
+                className="inline-flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium mb-3 cursor-pointer"
                 onClick={terminateSpotifyAuth}
                 style={{ cursor: 'pointer' }}
                 title="Click to disconnect"
-              >Connected to Spotify</p>
+              >
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                Connected to Spotify
+              </div>
             ) : (
               <button
                 className="mt-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
@@ -336,21 +380,25 @@ export default function Home() {
 
           {/* Spotify Playlists Component */}
           <div className="playlists-section">
-            {isSpotifyAuth ? <SpotifyPlaylistProcessor /> : ''}
+            {isSpotifyAuth ? <SpotifyPlaylistProcessor onChange={setSearchQuery}/> : ''}
           </div>
         </div>
       </aside>
 
-      <main className="main-content">
-        <div className="content-wrapper">
+      {/* Main Content */}
+      <main className="flex-1 lg:ml-96 min-h-screen pt-16 lg:pt-0">
+        <div className="max-w-6xl mx-auto px-4 lg:px-10 py-6 lg:py-12">
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', marginBottom: '20px' }}>
             {isSoundCloudAuth ? (
-              <p
-                className="text-gray-700"
+              <div 
+                className="inline-flex items-center gap-2 px-3 py-2 bg-orange-50 text-orange-700 rounded-lg text-sm font-medium mb-3 cursor-pointer"
                 onClick={terminateSoundCloudAuth}
                 style={{ cursor: 'pointer' }}
                 title="Click to disconnect"
-              >Connected to Soundcloud</p>
+              >
+                <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></span>
+                Connected to SoundCloud
+              </div>
             ) : (
               <button
                 className="mt-2 bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
@@ -360,111 +408,121 @@ export default function Home() {
             )}
           </div>
 
-          <h1 className="text-2xl font-bold mb-4">DJ Contact Researcher</h1>
-
-          {/* Artist input form */}
-          <div className="search-section">
-            {<ModernSearchBar onSearch={handleSearch} onChange={setSearchQuery} query={searchQuery} />}
-          </div>
+          {<ModernSearchBar onSearch={handleSearch} onChange={setSearchQuery} query={searchQuery} />}
 
           {/* Results table */}
-          <div className="results-section">
-            {(hasSearched || isSearching) && (
-              <SortableTable
-                data={searchResults}
-                columns={[
-                  {
-                    key: 'djName',
-                    label: 'DJ Name',
-                    sortable: true
-                  },
-                  {
-                    key: 'website',
-                    label: 'Website (not exported)',
-                    sortable: false,
-                    render: (value) => value ? (
-                      <a
-                        href={value}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Visit website"
-                        className="text-blue-500 hover:underline">
-                        {value}
-                      </a>
-                    ) : ''
-                  },
-                  {
-                    key: 'instagram',
-                    label: 'Instagram',
-                    sortable: true,
-                    render: (value) => value ? (
-                      <a
-                        href={`https://instagram.com/${value.replace('@', '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Open Instagram"
-                        className="text-purple-500 hover:underline">
-                        @{value.replace('@', '')}
-                      </a>
-                    ) : ''
-                  },
-                  {
-                    key: 'demoEmail',
-                    label: 'Promo/Demo Email',
-                    sortable: true,
-                    render: (value) => value || ''
-                  },
-                  {
-                    key: 'soundCloud',
-                    label: 'SoundCloud',
-                    sortable: true,
-                    render: (value) => value ? (
-                      <a
-                        href={value}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Open SoundCloud"
-                        className="text-orange-500 hover:underline">
-                        Profile
-                      </a>
-                    ) : ''
-                  },
-                  {
-                    key: 'tstack',
-                    label: 'TrackStack',
-                    sortable: true,
-                    render: (value) => value ? (
-                      <a
-                        href={value}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Open TrackStack"
-                        className="text-green-500 hover:underline">
-                        Link
-                      </a>
-                    ) : ''
-                  }
-                ]}
-                loading={isSearching}
-                skeletonRowCount={5}
-              />
-            )}
-            {hasSearched && (
-              <button
-                className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
-                onClick={handleExportCSV}
-              >
-                Export CSV
-              </button>
-            )}
-            {/* Not Found Artists */}
-            {notFoundArtists.length > 0 && (
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                <h3 className="font-medium text-yellow-800">Not found:</h3>
-                <p className="text-yellow-700">{notFoundArtists.join(', ')}</p>
-              </div>
-            )}
-          </div>
+          {searchResults.length > 0 && (
+            <div className="results-section">
+              {(hasSearched || isSearching) && (
+                <SortableTable
+                  data={searchResults}
+                  columns={[
+                    {
+                      key: 'djName',
+                      label: 'DJ Name',
+                      sortable: true
+                    },
+                    {
+                      key: 'website',
+                      label: 'Website (not exported)',
+                      sortable: false,
+                      render: (value) => value ? (
+                        <a
+                          href={value}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Visit website"
+                          className="text-blue-500 hover:underline">
+                          {value}
+                        </a>
+                      ) : ''
+                    },
+                    {
+                      key: 'instagram',
+                      label: 'Instagram',
+                      sortable: true,
+                      render: (value) => value ? (
+                        <a
+                          href={`https://instagram.com/${value.replace('@', '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Open Instagram"
+                          className="text-purple-500 hover:underline">
+                          @{value.replace('@', '')}
+                        </a>
+                      ) : ''
+                    },
+                    {
+                      key: 'demoEmail',
+                      label: 'Promo/Demo Email',
+                      sortable: true,
+                      render: (value) => value || ''
+                    },
+                    {
+                      key: 'soundCloud',
+                      label: 'SoundCloud',
+                      sortable: true,
+                      render: (value) => value ? (
+                        <a
+                          href={value}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Open SoundCloud"
+                          className="text-orange-500 hover:underline">
+                          Profile
+                        </a>
+                      ) : ''
+                    },
+                    {
+                      key: 'tstack',
+                      label: 'TrackStack',
+                      sortable: true,
+                      render: (value) => value ? (
+                        <a
+                          href={value}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Open TrackStack"
+                          className="text-green-500 hover:underline">
+                          Link
+                        </a>
+                      ) : ''
+                    }
+                  ]}
+                  loading={isSearching}
+                  skeletonRowCount={5}
+                />
+              )}
+              {hasSearched && (
+                <button
+                  className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm focus:outline-none focus:shadow-outline"
+                  onClick={handleExportCSV}
+                >
+                  Export CSV
+                </button>
+              )}
+              {/* Not Found Artists */}
+              {notFoundArtists.length > 0 && (
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg shadow-sm">
+                  <h3 className="font-medium text-yellow-800">Not found:</h3>
+                  <p className="text-yellow-700">{notFoundArtists.join(', ')}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {hasSearched && searchResults.length === 0 && searchQuery && (
+            <div className="bg-white rounded-2xl p-12 lg:p-20 shadow-sm text-center">
+              <div className="text-5xl mb-4 opacity-50">🔍</div>
+              <p className="text-lg font-medium text-gray-700 mb-2">
+                No results found
+              </p>
+              <p className="text-sm text-gray-400">
+                Try searching for different artists
+              </p>
+            </div>
+          )}
 
           {/* Searching Overlay */}
           {isSearching && (

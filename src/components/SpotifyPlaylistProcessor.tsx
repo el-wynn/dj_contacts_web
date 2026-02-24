@@ -9,7 +9,11 @@ type Playlist = {
 	imageUrl?: string;
 };
 
-export default function SpotifyPlaylistProcessor() {
+interface SpotifyPlaylistProcessorProps {
+	onChange: (value: string) => void;
+}
+
+export default function SpotifyPlaylistProcessor({ onChange } : SpotifyPlaylistProcessorProps ) {
 	const [playlists, setPlaylists] = useState<Playlist[]>([]);
 	const [artists, setArtists] = useState<string>('');
 	const [isLoading, setIsLoading] = useState(false);
@@ -88,26 +92,34 @@ export default function SpotifyPlaylistProcessor() {
 		setHasCopy(true);
 	}
 
+	const handleQuery = () => {
+		onChange(artists)
+	}
+
 	return (
-		<div className="space-y-4 max-w-md h-64 mx-auto">
+		<div className="space-y-4 max-w-md mx-auto">
 			{stage === 'init' && (
 				<button
 					onClick={fetchUserPlaylists}
 					disabled={isLoading}
-					className="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
+					className="w-full mt-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50"
 				>
-					{isLoading ? 'Loading...' : 'Get My Spotify Playlists'}
+					{isLoading ? 'Loading...' : 'Show playlists'}
 				</button>
 			)}
 
 			{stage === 'playlists' && (
 				<div className="space-y-2">
-					<ul className="space-y-2 max-h-64 overflow-y-auto">
+					<ul className="space-y-2 overflow-y-auto">
 						{playlists.map(playlist => (
 							<li
 								key={playlist.id}
 								onClick={() => processPlaylist(playlist.id)}
-								className="p-3 border rounded hover:bg-gray-50 cursor-pointer flex items-center"
+								className={`
+									flex items-center gap-3 p-3 rounded-xl cursor-pointer 
+									transition-all duration-200 border shadow-sm text-gray-600 
+									bg-gray-50 border-gray-100 hover:bg-gray-100 hover:border-gray-200
+								  `}
 							>
 								{playlist.imageUrl && (
 									<img
@@ -132,26 +144,26 @@ export default function SpotifyPlaylistProcessor() {
 				<div className="space-y-4">
 					<button
 						onClick={() => setStage('playlists')}
-						className="text-sm text-blue-500 hover:underline"
+						className="rounded-lg px-3 py-2 bg-gray-50 text-gray-700 text-sm font-medium mb-3 cursor-pointer shadow-sm"
 					>
-						← Back to playlists
+						&lt; Back
 					</button>
 
 					{isError ? (
-						<div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+						<div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg shadow-sm">
 							{artists}
 						</div>
 					) : (
-						<div className="space-y-2">
-							<h3 className="font-medium">Artists in this playlist:</h3>
+						<div className="space-y-2 shadow-sm bg-gray-50 border-gray-100 rounded-xl p-2">
+							<h3 className="font-small text-gray-700">Artists in this playlist:</h3>
 							<textarea
 								value={artists}
 								readOnly
-								className="w-full p-2 border rounded min-h-24"
+								className="w-full p-2 rounded-lg min-h-24 resize-none focus:outline-none focus:shadow-outline"
 							/>
 							<button
 								onClick={handleCopy}
-								className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+								className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
 							>
 								{hasCopy ? 'Copied !' : 'Copy to Clipboard'}
 							</button>
