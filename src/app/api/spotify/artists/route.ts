@@ -59,9 +59,11 @@ export async function GET(request: NextRequest) {
   return match?.[1] || match?.[2] || null;
 } */
 
+// TODO : fetch more than 100 items
 async function getPlaylistTracks(playlistId: string, token: string) {
   const response = await fetch(
-    `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`,
+    //`https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`,
+    `https://api.spotify.com/v1/playlists/${playlistId}/items?limit=100`,
     {
       headers: { 'Authorization': `Bearer ${token}` }
     }

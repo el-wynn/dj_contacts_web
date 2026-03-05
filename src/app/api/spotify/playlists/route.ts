@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // First fetch user's playlists
+    // TODO : fetch more than 50 playlist
     const playlistsResponse = await fetch('https://api.spotify.com/v1/me/playlists?limit=50', {
       headers: {
         'Authorization': `Bearer ${accessToken}`
