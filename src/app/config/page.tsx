@@ -46,6 +46,7 @@ export default function ConfigPage() {
       
       if (response.ok) {
         setMessage('Configuration saved successfully!');
+        window.location.href = "/"
       } else {
         const error = await response.json();
         setMessage(`Error: ${error.message}`);
