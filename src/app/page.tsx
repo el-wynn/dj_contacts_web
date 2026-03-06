@@ -345,7 +345,7 @@ export default function Home() {
       {/* Sidebar */}
       <aside className={`
         fixed left-0 top-0 bottom-0 w-80 lg:w-96 bg-white border-r border-gray-200 
-        flex flex-col overflow-y-auto z-50 transition-transform duration-300
+        flex flex-col h-screen overflow-y-auto z-50 transition-transform duration-300
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Sidebar Header */}
@@ -365,7 +365,7 @@ export default function Home() {
         </div>
 
         {/* Sidebar Content */}
-        <div className="flex-1 p-6 overflow-y-auto">
+        <div className="flex-1 grow p-6 overflow-y-auto">
           {/* Spotify Connection Status */}
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', marginBottom: '20px' }}>
             {isSpotifyAuth ? (
@@ -388,10 +388,16 @@ export default function Home() {
           </div>
 
           {/* Spotify Playlists Component */}
-          <div className="playlists-section">
+          <div className="grow">
             {isSpotifyAuth ? <SpotifyPlaylistProcessor onChange={setSearchQuery}/> : ''}
           </div>
+          
         </div>
+        <footer className="text-center mb-6">
+          <a href="/config" className="hover:underline">
+            Configuration
+          </a>
+        </footer> 
       </aside>
 
       {/* Main Content */}
@@ -417,7 +423,7 @@ export default function Home() {
             )}
           </div>
 
-          {<ModernSearchBar onSearch={handleSearch} onChange={setSearchQuery} query={searchQuery} />}
+          {isSoundCloudAuth && <ModernSearchBar onSearch={handleSearch} onChange={setSearchQuery} query={searchQuery} />}
 
           {/* Results table */}
           {searchResults.length > 0 && (
@@ -554,9 +560,9 @@ export default function Home() {
               <div className="animate-pulse text-white text-2xl">Searching for {currentArtist}...</div>
             </div>
           )}
-        </div>
+        </div> 
       </main>
-      
+          
     </div>
   );
 }
