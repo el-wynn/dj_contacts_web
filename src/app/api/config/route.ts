@@ -93,6 +93,7 @@ export async function GET() {
     }
 
     result[0]['soundcloudClientId'] = decrypt(result[0]['soundcloudClientId'], process.env.DB_ENCRYPTION_KEY)
+    result[0]['spotifyClientId'] = decrypt(result[0]['spotifyClientId'], process.env.DB_ENCRYPTION_KEY)
     console.log(result[0])
     return NextResponse.json(result[0] || {
       soundcloudClientId: '',
