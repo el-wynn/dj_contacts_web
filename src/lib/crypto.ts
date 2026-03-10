@@ -15,7 +15,6 @@ export function encrypt(data : string, key : string) { // Function to encrypt da
  
 export function decrypt(dataString : string, key : string) { // Function to decrypt data
     const data = JSON.parse(dataString);
-    console.log(data + " ; " + data.encryptIv);
     const encryptIv = Buffer.from(data.encryptIv, 'hex');
     const encryptedText = Buffer.from(data.encryptedData, 'hex');
     const decipher = crypto.createDecipheriv(algorithm, Buffer.from(key), encryptIv);
