@@ -1,6 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
-import { encrypt, decrypt } from '@/lib/crypto';
+import { ConfigService } from '@/lib/config-service';
 
 // Initialize database connection
 const sql = neon(process.env.DATABASE_URL || '');
@@ -17,7 +17,6 @@ export async function POST(request: Request) {
       'spotifyRedirectUri'
     ];
     
-    // Check that no field is empty
     for (const field of requiredFields) {
       if (!config[field]) {
         return NextResponse.json(
@@ -27,30 +26,23 @@ export async function POST(request: Request) {
       }
     }
 
-    if(!process.env.DB_ENCRYPTION_KEY) {
+    // Validate redirect URIs
+    if (!isValidRedirectUri(config.soundcloudRedirectUri) || 
+        !isValidRedirectUri(config.spotifyRedirectUri)) {
       return NextResponse.json(
-        { message: `Invalid database encryption key` },
-        { status: 500 }
+        { message: 'Invalid redirect URI format' },
+        { status: 400 }
       );
     }
-    
-    // Upsert configuration, encrypting keys
-    await sql`
-      UPDATE config 
-      SET 
-        soundcloud_client_id = ${encrypt(config.soundcloudClientId, process.env.DB_ENCRYPTION_KEY)},
-        soundcloud_redirect_uri = ${config.soundcloudRedirectUri},
-        spotify_client_id = ${encrypt(config.spotifyClientId, process.env.DB_ENCRYPTION_KEY)},
-        spotify_redirect_uri = ${config.spotifyRedirectUri},
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = 1
-    `;
-    
+
+    const configService = new ConfigService(sql);
+    await configService.saveConfig(config);
+
     return NextResponse.json({ message: 'Configuration saved successfully' });
-  } catch (error : any) {
+  } catch (error: any) {
     console.error('Error saving configuration:', error);
     return NextResponse.json(
-      { message: 'Failed to save configuration' },
+      { message: error.message || 'Failed to save configuration' },
       { status: 500 }
     );
   }
@@ -58,54 +50,24 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const result = await sql`
-      SELECT 
-        soundcloud_client_id AS "soundcloudClientId",
-        soundcloud_redirect_uri AS "soundcloudRedirectUri",
-        spotify_client_id AS "spotifyClientId",
-        spotify_redirect_uri AS "spotifyRedirectUri"
-      FROM config 
-      WHERE id = 1
-    `;
-
-    const requiredFields = [
-      'soundcloudClientId',
-      'soundcloudRedirectUri',
-      'spotifyClientId',
-      'spotifyRedirectUri'
-    ];
+    const configService = new ConfigService(sql);
+    const config = await configService.getConfig();
     
-    // Check that no field is empty
-    for (const field of requiredFields) {
-      if (!result[0][field]) {
-        return NextResponse.json(
-          { message: `Missing required field on GET: ${field}` },
-          { status: 400 }
-        );
-      }
-    }
-
-    if(!process.env.DB_ENCRYPTION_KEY) {
-      return NextResponse.json(
-        { message: `Invalid database encryption key` },
-        { status: 500 }
-      );
-    }
-
-    result[0]['soundcloudClientId'] = decrypt(result[0]['soundcloudClientId'], process.env.DB_ENCRYPTION_KEY)
-    result[0]['spotifyClientId'] = decrypt(result[0]['spotifyClientId'], process.env.DB_ENCRYPTION_KEY)
-    console.log(result[0])
-    return NextResponse.json(result[0] || {
-      soundcloudClientId: '',
-      soundcloudRedirectUri: '',
-      spotifyClientId: '',
-      spotifyRedirectUri: ''
-    });
-  } catch (error : any) {
+    return NextResponse.json(config);
+  } catch (error: any) {
     console.error('Error reading configuration:', error);
     return NextResponse.json(
-      { message: 'Failed to read configuration' },
+      { message: error.message || 'Failed to read configuration' },
       { status: 500 }
     );
+  }
+}
+
+function isValidRedirectUri(uri: string): boolean {
+  try {
+    const url = new URL(uri);
+    return ['http:', 'https:'].includes(url.protocol);
+  } catch {
+    return false;
   }
 }

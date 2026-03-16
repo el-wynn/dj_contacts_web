@@ -86,7 +86,7 @@ export default function ConfigPage() {
             </label>
             <input
               type="text"
-              value={config.soundcloudClientId}
+              value=""
               onChange={(e) => setConfig({...config, soundcloudClientId: e.target.value})}
               className="w-full p-2 border border-gray-200 rounded-lg"
               placeholder="Enter SoundCloud Client ID"
@@ -118,7 +118,7 @@ export default function ConfigPage() {
             </label>
             <input
               type="text"
-              value={config.spotifyClientId}
+              value=""
               onChange={(e) => setConfig({...config, spotifyClientId: e.target.value})}
               className="w-full p-2 border border-gray-200 rounded-lg"
               placeholder="Enter Spotify Client ID"
