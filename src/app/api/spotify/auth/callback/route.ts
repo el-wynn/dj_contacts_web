@@ -14,13 +14,6 @@ export async function GET(request: NextRequest) {
 
   const baseURL = getBaseURL(request);
 
-  /*console.log('Incoming Request:', {
-     url: baseURL,
-    requestURL: request.url,
-    headers: Object.fromEntries(request.headers),
-    cookies: request.cookies.getAll()
-  }); */
-
   // Handle OAuth errors first
   if (error) {
     console.error('Spotify OAuth error:', error);
@@ -29,19 +22,6 @@ export async function GET(request: NextRequest) {
 
   // Verify state matches cookie
   const expectedState = request.cookies.get('spotify_oauth_state')?.value;
-
-  // if not in cookies, use local statestore
-  /* if (!savedState) {
-    const sessionId = searchParams.get('session_id');
-    const manualState = (sessionId && process.env.NODE_ENV === 'development')
-      ? (await import('@/lib/statestore')).getState(sessionId)
-      : null;
-    
-    if (manualState) {
-      console.warn('Using manual state fallback');
-      expectedState = manualState;
-    }
-  } */
 
   if (!state || !expectedState || state !== expectedState) {
     console.error('State mismatch or missing : ');

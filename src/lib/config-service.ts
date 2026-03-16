@@ -111,6 +111,13 @@ export class ConfigService {
     }
   }
 
+  // Helper for server components that need config
+  async withAppConfig<T>( callback: (config: AppConfig) => T | Promise<T> ): Promise<T> {
+    const config = await this.getConfig();
+    return callback(config);
+  }
+
+
   async saveConfig(config: AppConfig): Promise<void> {
     const key = this.getEncryptionKey();
 
