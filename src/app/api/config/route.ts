@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const configService = new ConfigService(sql);
+    const configService = ConfigService.getInstance(sql);
     await configService.saveConfig(config);
 
     return NextResponse.json({ message: 'Configuration saved successfully' });
@@ -50,7 +50,9 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const configService = new ConfigService(sql);
+    // Call database, stores config on a cache, 
+    // then uses cache for future calls
+    const configService = ConfigService.getInstance(sql);
     const config = await configService.getConfig();
     
     return NextResponse.json(config);

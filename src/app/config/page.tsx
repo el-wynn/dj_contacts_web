@@ -1,7 +1,9 @@
 'use client';
 import { FullPageLoader } from '@/components/FullPageLoader';
 import React, { useState, useEffect } from 'react';
-
+/* 
+ * Will fetch config from local api (/api/config/route);
+ */
 export default function ConfigPage() {
   const [config, setConfig] = useState({
     soundcloudClientId: '',

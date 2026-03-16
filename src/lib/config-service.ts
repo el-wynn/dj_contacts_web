@@ -1,13 +1,7 @@
 import { NeonQueryFunction } from '@neondatabase/serverless';
 import { encrypt, decrypt } from './crypto';
 
-const ENCRYPTION_KEY = process.env.DB_ENCRYPTION_KEY || '';
-
-if (!ENCRYPTION_KEY) {
-  console.error('DB_ENCRYPTION_KEY is not set in environment variables');
-  throw new Error('Missing encryption key');
-}
-
+// Type definition for the configuration object
 export type AppConfig = {
   soundcloudClientId: string;
   soundcloudRedirectUri: string;
@@ -15,15 +9,63 @@ export type AppConfig = {
   spotifyRedirectUri: string;
 };
 
-export class ConfigService {
-  private sql: NeonQueryFunction<false,false>;
+/* // Type definition for the raw database row
+type ConfigRow = {
+  soundcloud_client_id: string | null;
+  soundcloud_redirect_uri: string | null;
+  spotify_client_id: string | null;
+  spotify_redirect_uri: string | null;
+}; */
 
-  constructor(sql: NeonQueryFunction<false,false>) {
+// Cache structure
+interface CacheEntry {
+  config: AppConfig;
+  timestamp: number;
+}
+
+export class ConfigService {
+  private sql: NeonQueryFunction<false, false>;
+  private static instance: ConfigService | null = null;
+  
+  // Instance-level cache to survive hot-reloads better than module scope
+  private cache: CacheEntry | null = null;
+  private readonly MAX_AGE = 60 * 60 * 1000; // 60 minutes
+
+  private constructor(sql: NeonQueryFunction<false, false>) {
     this.sql = sql;
   }
 
+  /**
+   * Factory method to get or create the singleton instance
+   * In Next.js Server Actions, you might instantiate this directly per call
+   * depending on your pooling strategy.
+   */
+  static getInstance(sql: NeonQueryFunction<false, false>): ConfigService {
+    if (!ConfigService.instance) {
+      ConfigService.instance = new ConfigService(sql);
+    }
+    return ConfigService.instance;
+  }
+
+  private getEncryptionKey(): string {
+    const key = process.env.DB_ENCRYPTION_KEY;
+    if (!key) {
+      console.error('DB_ENCRYPTION_KEY is not set in environment variables');
+      throw new Error('Missing encryption key');
+    }
+    return key;
+  }
+
   async getConfig(): Promise<AppConfig> {
+    // Check cache
+    if (this.cache && Date.now() - this.cache.timestamp < this.MAX_AGE) {
+      console.log("[CONFIG] Using Cache")
+      return this.cache.config;
+    }
+
     try {
+      const key = this.getEncryptionKey();
+
       const result = await this.sql`
         SELECT 
           soundcloud_client_id,
@@ -32,50 +74,72 @@ export class ConfigService {
           spotify_redirect_uri
         FROM config 
         WHERE id = 1
+        LIMIT 1
       `;
 
-      if (result.length === 0) {
-        return this.getDefaultConfig();
+      let config: AppConfig;
+
+      if (result.length === 0 || !result[0]) {
+        config = this.getDefaultConfig();
+      } else {
+        const row = result[0];
+        config = {
+          soundcloudClientId: row.soundcloud_client_id 
+            ? decrypt(row.soundcloud_client_id, key) 
+            : '',
+          soundcloudRedirectUri: row.soundcloud_redirect_uri || '',
+          spotifyClientId: row.spotify_client_id 
+            ? decrypt(row.spotify_client_id, key) 
+            : '',
+          spotifyRedirectUri: row.spotify_redirect_uri || ''
+        };
       }
 
-      return {
-        soundcloudClientId: result[0].soundcloud_client_id ? 
-          decrypt(result[0].soundcloud_client_id, ENCRYPTION_KEY) : '',
-        soundcloudRedirectUri: result[0].soundcloud_redirect_uri || '',
-        spotifyClientId: result[0].spotify_client_id ? 
-          decrypt(result[0].spotify_client_id, ENCRYPTION_KEY) : '',
-        spotifyRedirectUri: result[0].spotify_redirect_uri || ''
+      // Update cache
+      this.cache = {
+        config,
+        timestamp: Date.now()
       };
+
+      console.log("[CONFIG] New Confing")
+      return config;
     } catch (error) {
       console.error('Database error in getConfig:', error);
+      // Fallback to default config on error to prevent app crash
+      console.log("[CONFIG] Empty Confing")
       return this.getDefaultConfig();
     }
   }
 
   async saveConfig(config: AppConfig): Promise<void> {
-    // Encrypt sensitive data
+    const key = this.getEncryptionKey();
+
+    // Invalidate cache immediately
+    this.cache = null;
+
     const encryptedConfig = {
-      soundcloudClientId: encrypt(config.soundcloudClientId, ENCRYPTION_KEY),
+      soundcloudClientId: encrypt(config.soundcloudClientId, key),
       soundcloudRedirectUri: config.soundcloudRedirectUri,
-      spotifyClientId: encrypt(config.spotifyClientId, ENCRYPTION_KEY),
+      spotifyClientId: encrypt(config.spotifyClientId, key),
       spotifyRedirectUri: config.spotifyRedirectUri
     };
 
     try {
-      // Use upsert pattern instead of separate update/insert
       await this.sql`
         INSERT INTO config (
           id,
           soundcloud_client_id,
           soundcloud_redirect_uri,
           spotify_client_id,
-          spotify_redirect_uri
+          spotify_redirect_uri,
+          updated_at
         ) VALUES (
           1,
           ${encryptedConfig.soundcloudClientId},
           ${encryptedConfig.soundcloudRedirectUri},
           ${encryptedConfig.spotifyClientId},
-          ${encryptedConfig.spotifyRedirectUri}
+          ${encryptedConfig.spotifyRedirectUri},
+          CURRENT_TIMESTAMP
         )
         ON CONFLICT (id) DO UPDATE SET
           soundcloud_client_id = EXCLUDED.soundcloud_client_id,
@@ -86,7 +150,7 @@ export class ConfigService {
       `;
     } catch (error) {
       console.error('Database error in saveConfig:', error);
-      throw new Error('Database error while saving configuration');
+      throw new Error('Failed to save configuration');
     }
   }
 
