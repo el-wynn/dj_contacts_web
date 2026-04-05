@@ -1,4 +1,5 @@
-// Functions for PKCE Auth
+import * as crypto from 'crypto';
+
 export function generateCodeVerifier(length: number = 128): string {
     let text = '';
     const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
@@ -6,6 +7,12 @@ export function generateCodeVerifier(length: number = 128): string {
         text += possible.charAt(Math.floor(Math.random() * possible.length));
     }
     return text;
+}
+
+const state_length = 32;
+
+export function generateState(): string {
+    return generateCodeVerifier(state_length);
 }
 
 export async function generateCodeChallenge(codeVerifier: string): Promise<string> {
@@ -20,6 +27,6 @@ export async function generateCodeChallenge(codeVerifier: string): Promise<strin
 
 export async function sha256(plain: string) {
     const utf8 = new TextEncoder().encode(plain);
-    const digest = await window.crypto.subtle.digest('SHA-256', utf8);
+    const digest = await crypto.subtle.digest('SHA-256', utf8);
     return digest;
 }
