@@ -1,20 +1,20 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { ContactInfo } from '@/lib/types';
-import { generateCodeVerifier, generateCodeChallenge } from '@/lib/pkce';
+//import { generateCodeVerifier, generateCodeChallenge } from '@/lib/pkce';
 import Papa from 'papaparse';
-import { saveState } from '@/lib/statestore';
+//import { saveState } from '@/lib/statestore';
 import SpotifyPlaylistProcessor from '@/components/SpotifyPlaylistProcessor';
 import { ModernSearchBar } from '@/components/ModernSearchBar'
 import { SortableTable } from '@/components/SortableTable';
 import { FullPageLoader } from '@/components/FullPageLoader';
-import { AppConfig } from '@/lib/config-service';
+//import { AppConfig } from '@/lib/config-service';
 
 
 export default function Home() {
   const [isSoundCloudAuth, setIsSoundCloudAuth] = useState<boolean>(false); // State to control UI elements based on auth status
   const [isSpotifyAuth, setIsSpotifyAuth] = useState<boolean>(false); // State to control UI elements based on auth status
-  const [config, setConfig] = useState<AppConfig>();
+  //const [config, setConfig] = useState<AppConfig>();
   const [isSearching, setIsSearching] = useState<boolean>(false); // State to control UI elements while searching
   const [currentArtist, setCurrentArtist] = useState<string>(''); // State to display current artist being searched
   const [hasSearched, setHasSerached] = useState<boolean>(false); // State to display table when search is done
@@ -84,7 +84,7 @@ export default function Home() {
     return () => clearInterval(intervalId); // Cleanup interval on component unmount
   }, []); // Empty dependency array to run once on mount
 
-  // Load existing configuration
+/*   // Load existing configuration
     useEffect(() => {
       const loadConfig = async () => {
         try {
@@ -98,7 +98,7 @@ export default function Home() {
         } 
       };      
       loadConfig();
-    }, []);
+    }, []); */
 
   useEffect(() => {
     document.body.style.cursor = isSearching ? 'wait' : 'default';
