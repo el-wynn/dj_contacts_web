@@ -8,11 +8,13 @@ import SpotifyPlaylistProcessor from '@/components/SpotifyPlaylistProcessor';
 import { ModernSearchBar } from '@/components/ModernSearchBar'
 import { SortableTable } from '@/components/SortableTable';
 import { FullPageLoader } from '@/components/FullPageLoader';
+import { AppConfig } from '@/lib/config-service';
 
 
 export default function Home() {
   const [isSoundCloudAuth, setIsSoundCloudAuth] = useState<boolean>(false); // State to control UI elements based on auth status
   const [isSpotifyAuth, setIsSpotifyAuth] = useState<boolean>(false); // State to control UI elements based on auth status
+  const [config, setConfig] = useState<AppConfig>();
   const [isSearching, setIsSearching] = useState<boolean>(false); // State to control UI elements while searching
   const [currentArtist, setCurrentArtist] = useState<string>(''); // State to display current artist being searched
   const [hasSearched, setHasSerached] = useState<boolean>(false); // State to display table when search is done
@@ -24,7 +26,6 @@ export default function Home() {
   //const [csvFile, setCsvFile] = useState<File | null>(null);
   //const [csvError, setCsvError] = useState<string | null>(null);
   const [notFoundArtists, setNotFoundArtists] = useState<string[]>([]);
-
 
   useEffect(() => {
     // Function to check authentication status using the server-side endpoint
@@ -83,6 +84,22 @@ export default function Home() {
     return () => clearInterval(intervalId); // Cleanup interval on component unmount
   }, []); // Empty dependency array to run once on mount
 
+  // Load existing configuration
+    useEffect(() => {
+      const loadConfig = async () => {
+        try {
+          const response = await fetch('/api/config');
+          if (response.ok) {
+            const data = await response.json();
+            setConfig(data);
+          }
+        } catch (error) {
+          console.error('Failed to load configuration : ' + error);
+        } 
+      };      
+      loadConfig();
+    }, []);
+
   useEffect(() => {
     document.body.style.cursor = isSearching ? 'wait' : 'default';
     return () => {
@@ -90,7 +107,7 @@ export default function Home() {
     };
   }, [isSearching]);
 
-  const initiateSoundCloudAuth = async () => {
+/*   const initiateSoundCloudAuth = async () => {
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     const state = generateCodeVerifier(32);
@@ -109,9 +126,23 @@ export default function Home() {
     const authorizationEndpoint = `https://secure.soundcloud.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri ?? '')}&response_type=code&code_challenge=${codeChallenge}&code_challenge_method=S256&state=${state}`;
 
     window.location.href = authorizationEndpoint;
-  };
+  }; */
 
-  const initiateSpotifyAuth = async () => {
+ /*  const initiateSpotifyAuth = async () => {
+    try {
+      const response = await fetch('/api/auth/init?provider=spotify');
+      if (response.ok) {
+        console.log('Connected to Spotify.');
+        // Refresh the page or update the isAuthenticated state (client side) to reflect disconnection.
+        setIsSoundCloudAuth(false);
+      } else {
+        console.error('Failed to connect to Spotify');
+      }
+    } catch (error) {
+      console.error('Error calling connect endpoint : ' + error);
+    }
+  }; */
+  /* const initiateSpotifyAuth = async () => {
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     const state = generateCodeVerifier(32);
@@ -145,7 +176,7 @@ export default function Home() {
 
     authUrl.search = new URLSearchParams(params).toString();
         window.location.href = authUrl.toString();
-  };
+  }; */
 
   const terminateSoundCloudAuth = async () => {
     try {
@@ -379,11 +410,12 @@ export default function Home() {
                 Connected to Spotify
               </div>
             ) : (
-              <button
+              <a
+                href="/api/auth/init?provider=spotify"
                 className="mt-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
-                onClick={initiateSpotifyAuth}
+                //onClick={initiateSpotifyAuth}
                 style={{ cursor: 'pointer' }}
-              >Connect to Spotify</button>
+              >Connect to Spotify</a>
             )}
           </div>
 
@@ -415,11 +447,12 @@ export default function Home() {
                 Connected to SoundCloud
               </div>
             ) : (
-              <button
+              <a 
+                href="/api/auth/init?provider=soundcloud"
                 className="mt-2 bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
-                onClick={initiateSoundCloudAuth}
+                //onClick={initiateSoundCloudAuth}
                 style={{ cursor: 'pointer' }}
-              >Connect to SoundCloud</button>
+              >Connect to SoundCloud</a>
             )}
           </div>
 
