@@ -1,20 +1,16 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { ContactInfo } from '@/lib/types';
-//import { generateCodeVerifier, generateCodeChallenge } from '@/lib/pkce';
 import Papa from 'papaparse';
-//import { saveState } from '@/lib/statestore';
 import SpotifyPlaylistProcessor from '@/components/SpotifyPlaylistProcessor';
 import { ModernSearchBar } from '@/components/ModernSearchBar'
 import { SortableTable } from '@/components/SortableTable';
 import { FullPageLoader } from '@/components/FullPageLoader';
-//import { AppConfig } from '@/lib/config-service';
 
 
 export default function Home() {
   const [isSoundCloudAuth, setIsSoundCloudAuth] = useState<boolean>(false); // State to control UI elements based on auth status
   const [isSpotifyAuth, setIsSpotifyAuth] = useState<boolean>(false); // State to control UI elements based on auth status
-  //const [config, setConfig] = useState<AppConfig>();
   const [isSearching, setIsSearching] = useState<boolean>(false); // State to control UI elements while searching
   const [currentArtist, setCurrentArtist] = useState<string>(''); // State to display current artist being searched
   const [hasSearched, setHasSerached] = useState<boolean>(false); // State to display table when search is done
@@ -23,8 +19,6 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSoundCloudLoading, setIsSoundCloudLoading] = useState<boolean>(true)
   const [isSpotifyLoading, setIsSpotifyLoading] = useState<boolean>(true)
-  //const [csvFile, setCsvFile] = useState<File | null>(null);
-  //const [csvError, setCsvError] = useState<string | null>(null);
   const [notFoundArtists, setNotFoundArtists] = useState<string[]>([]);
 
   useEffect(() => {
@@ -84,99 +78,12 @@ export default function Home() {
     return () => clearInterval(intervalId); // Cleanup interval on component unmount
   }, []); // Empty dependency array to run once on mount
 
-/*   // Load existing configuration
-    useEffect(() => {
-      const loadConfig = async () => {
-        try {
-          const response = await fetch('/api/config');
-          if (response.ok) {
-            const data = await response.json();
-            setConfig(data);
-          }
-        } catch (error) {
-          console.error('Failed to load configuration : ' + error);
-        } 
-      };      
-      loadConfig();
-    }, []); */
-
   useEffect(() => {
     document.body.style.cursor = isSearching ? 'wait' : 'default';
     return () => {
       document.body.style.cursor = 'default'; // Clean up on unmount
     };
   }, [isSearching]);
-
-/*   const initiateSoundCloudAuth = async () => {
-    const codeVerifier = generateCodeVerifier();
-    const codeChallenge = await generateCodeChallenge(codeVerifier);
-    const state = generateCodeVerifier(32);
-
-    const clientId = process.env.NEXT_PUBLIC_SOUNDCLOUD_CLIENT_ID;
-    const redirectUri = process.env.NEXT_PUBLIC_SOUNDCLOUD_REDIRECT_URI;
-
-    // Set secure cookies for PKCE and state parameters
-    const cookieOptions = process.env.NODE_ENV === 'production' ?
-      `; path=/; secure; htppOnly; sameSite=lax; max-age=3600` :
-      `; path=/; max-age=3600`;
-
-    document.cookie = `soundcloud_code_verifier=${codeVerifier}${cookieOptions}`;
-    document.cookie = `soundcloud_oauth_state=${state}${cookieOptions}`;
-
-    const authorizationEndpoint = `https://secure.soundcloud.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri ?? '')}&response_type=code&code_challenge=${codeChallenge}&code_challenge_method=S256&state=${state}`;
-
-    window.location.href = authorizationEndpoint;
-  }; */
-
- /*  const initiateSpotifyAuth = async () => {
-    try {
-      const response = await fetch('/api/auth/init?provider=spotify');
-      if (response.ok) {
-        console.log('Connected to Spotify.');
-        // Refresh the page or update the isAuthenticated state (client side) to reflect disconnection.
-        setIsSoundCloudAuth(false);
-      } else {
-        console.error('Failed to connect to Spotify');
-      }
-    } catch (error) {
-      console.error('Error calling connect endpoint : ' + error);
-    }
-  }; */
-  /* const initiateSpotifyAuth = async () => {
-    const codeVerifier = generateCodeVerifier();
-    const codeChallenge = await generateCodeChallenge(codeVerifier);
-    const state = generateCodeVerifier(32);
-
-    const sessionId = crypto.randomUUID(); // or use a simple timestamp
-    saveState(sessionId, state);
-
-    console.log(state);
-
-    const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || "";
-    const redirectUri = process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI || "";
-
-    // Set secure cookies for PKCE and state parameters
-    const cookieOptions = process.env.NODE_ENV === 'production' ?
-      `; path=/; secure; sameSite=lax; max-age=3600` :
-      `; path=/; domain=127.0.0.1; max-age=3600`;
-    document.cookie = `spotify_code_verifier=${codeVerifier}${cookieOptions}`;
-    document.cookie = `spotify_oauth_state=${state}${cookieOptions}`;
-
-    const authUrl = new URL("https://accounts.spotify.com/authorize");
-    const params = {
-      response_type: 'code',
-      client_id: clientId,
-      scope: 'playlist-read-private playlist-read-collaborative',
-      code_challenge_method: 'S256',
-      code_challenge: codeChallenge,
-      redirect_uri: redirectUri,
-      state: state,
-      session_id: sessionId,
-    }
-
-    authUrl.search = new URLSearchParams(params).toString();
-        window.location.href = authUrl.toString();
-  }; */
 
   const terminateSoundCloudAuth = async () => {
     try {
@@ -207,41 +114,6 @@ export default function Home() {
       console.error('Error calling disconnect endpoint : ' + error);
     }
   };
-
-  /*
-  const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (file && file.type === 'text/csv') {
-          setCsvFile(file);
-          setCsvError(null);
-      } else {
-          setCsvFile(null);
-          setCsvError('Invalid file type. Please select a CSV file.');
-      }
-  };
-  
-  const parseImportedCSV = async () => {
-      if (!csvFile) {
-          setCsvError('Please select a CSV file.');
-          return;
-      }
-  
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-          const csvText = event.target?.result as string;
-          // TODO: Implement CSV parsing and validation logic here
-          // For example, using a library like "papaparse"
-          // After parsing, update the "searchResults" state
-
-          console.log('CSV Content:', csvText);
-          alert('Parsing logic to be implemented. Check console for CSV content.');
-      };
-      reader.onerror = () => {
-          setCsvError('Error reading CSV file.');
-      };
-      reader.readAsText(csvFile);
-  };
-  */
 
   const sanitizeArtistInput = (input: string): string => {
     return input
@@ -290,16 +162,6 @@ export default function Home() {
     setIsSearching(false);
     setHasSerached(true);
   };
-
-  // Sanitize API output using DOMPurify
-  /* const sanitize = (dirty: string): string => {
-    try {
-      return DOMPurify.sanitize(dirty || '');
-    } catch (error) {
-      console.error(error);
-      return "";
-    }
-  } */
 
   const generateCSV = (data: ContactInfo[]): string => {
     // Define the headers explicitly to ensure correct order and inclusion
@@ -413,7 +275,6 @@ export default function Home() {
               <a
                 href="/api/auth/init?provider=spotify"
                 className="mt-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
-                //onClick={initiateSpotifyAuth}
                 style={{ cursor: 'pointer' }}
               >Connect to Spotify</a>
             )}
@@ -450,7 +311,6 @@ export default function Home() {
               <a 
                 href="/api/auth/init?provider=soundcloud"
                 className="mt-2 bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
-                //onClick={initiateSoundCloudAuth}
                 style={{ cursor: 'pointer' }}
               >Connect to SoundCloud</a>
             )}
