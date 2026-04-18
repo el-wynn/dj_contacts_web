@@ -46,7 +46,7 @@ export async function GET(request: Request) {
         authUrl = new URL('https://accounts.spotify.com/authorize');
         authUrl.searchParams.append('client_id', spotifyClientId);
         authUrl.searchParams.append('redirect_uri', spotifyRedirectUri);
-        authUrl.searchParams.append('scope', 'user-read-private user-read-email');
+        authUrl.searchParams.append('scope', 'playlist-read-private user-read-private');
     } else {
         return NextResponse.json(
             { message: 'Error initializating auth URL' },
